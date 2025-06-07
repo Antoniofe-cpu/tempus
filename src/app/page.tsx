@@ -1,3 +1,4 @@
+
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import { Button } from '@/components/ui/button';
@@ -11,7 +12,7 @@ export default function HomePage() {
       <Header />
       <main className="flex-grow">
         <section className="relative py-20 md:py-32 text-center overflow-hidden">
-          <div className="absolute inset-0 opacity-10">
+          <div className="absolute inset-0 opacity-30"> {/* Increased opacity */}
             <Image
               src="/hero-watch-mechanism.jpg"
               alt="Dettaglio meccanismo orologio di lusso"
