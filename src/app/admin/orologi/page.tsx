@@ -67,7 +67,7 @@ export default function AdminOrologiPage() {
       imageUrl: data.imageUrl || `https://placehold.co/40x40.png`,
       dataAiHint: data.dataAiHint || data.name.split(" ").slice(0,2).join(" ").toLowerCase(),
     };
-    setWatchesList(prev => [newWatch, ...prev]); // Add to the beginning of the list
+    setWatchesList(prev => [newWatch, ...prev]);
     reset();
     setIsDialogOpen(false);
   };
@@ -93,7 +93,7 @@ export default function AdminOrologiPage() {
                 Inserisci i dettagli del nuovo orologio da aggiungere al catalogo.
               </DialogDesc>
             </DialogHeader>
-            <form onSubmit={handleSubmit(onSubmit)} className="grid gap-5 py-4"> {/* Increased gap for better separation */}
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 py-4">
               
               <div>
                 <div className="grid grid-cols-4 items-center gap-x-4">
@@ -101,8 +101,9 @@ export default function AdminOrologiPage() {
                   <Input id="name" {...register("name")} className="col-span-3 bg-input border-border focus:border-accent focus:ring-accent" />
                 </div>
                 {errors.name && (
-                  <div className="grid grid-cols-4 gap-x-4">
-                    <p className="col-start-2 col-span-3 text-sm text-destructive mt-1">{errors.name.message}</p>
+                  <div className="grid grid-cols-4 gap-x-4 mt-1">
+                    <div className="col-span-1" /> {/* Spacer */}
+                    <p className="col-span-3 text-sm text-destructive">{errors.name.message}</p>
                   </div>
                 )}
               </div>
@@ -113,8 +114,9 @@ export default function AdminOrologiPage() {
                   <Input id="brand" {...register("brand")} className="col-span-3 bg-input border-border focus:border-accent focus:ring-accent" />
                 </div>
                 {errors.brand && (
-                  <div className="grid grid-cols-4 gap-x-4">
-                    <p className="col-start-2 col-span-3 text-sm text-destructive mt-1">{errors.brand.message}</p>
+                  <div className="grid grid-cols-4 gap-x-4 mt-1">
+                     <div className="col-span-1" /> {/* Spacer */}
+                    <p className="col-span-3 text-sm text-destructive">{errors.brand.message}</p>
                   </div>
                 )}
               </div>
@@ -125,8 +127,9 @@ export default function AdminOrologiPage() {
                   <Input id="price" type="number" {...register("price")} className="col-span-3 bg-input border-border focus:border-accent focus:ring-accent" />
                 </div>
                 {errors.price && (
-                  <div className="grid grid-cols-4 gap-x-4">
-                    <p className="col-start-2 col-span-3 text-sm text-destructive mt-1">{errors.price.message}</p>
+                  <div className="grid grid-cols-4 gap-x-4 mt-1">
+                     <div className="col-span-1" /> {/* Spacer */}
+                    <p className="col-span-3 text-sm text-destructive">{errors.price.message}</p>
                   </div>
                 )}
               </div>
@@ -137,8 +140,9 @@ export default function AdminOrologiPage() {
                   <Input id="stock" type="number" {...register("stock")} className="col-span-3 bg-input border-border focus:border-accent focus:ring-accent" />
                 </div>
                 {errors.stock && (
-                  <div className="grid grid-cols-4 gap-x-4">
-                    <p className="col-start-2 col-span-3 text-sm text-destructive mt-1">{errors.stock.message}</p>
+                  <div className="grid grid-cols-4 gap-x-4 mt-1">
+                     <div className="col-span-1" /> {/* Spacer */}
+                    <p className="col-span-3 text-sm text-destructive">{errors.stock.message}</p>
                   </div>
                 )}
               </div>
@@ -149,8 +153,9 @@ export default function AdminOrologiPage() {
                   <Input id="imageUrl" {...register("imageUrl")} placeholder="https://placehold.co/40x40.png" className="col-span-3 bg-input border-border focus:border-accent focus:ring-accent" />
                 </div>
                 {errors.imageUrl && (
-                  <div className="grid grid-cols-4 gap-x-4">
-                    <p className="col-start-2 col-span-3 text-sm text-destructive mt-1">{errors.imageUrl.message}</p>
+                  <div className="grid grid-cols-4 gap-x-4 mt-1">
+                    <div className="col-span-1" /> {/* Spacer */}
+                    <p className="col-span-3 text-sm text-destructive">{errors.imageUrl.message}</p>
                   </div>
                 )}
               </div>
@@ -161,25 +166,27 @@ export default function AdminOrologiPage() {
                   <Input id="dataAiHint" {...register("dataAiHint")} placeholder="es. rolex submariner" className="col-span-3 bg-input border-border focus:border-accent focus:ring-accent" />
                 </div>
                 {errors.dataAiHint && (
-                  <div className="grid grid-cols-4 gap-x-4">
-                    <p className="col-start-2 col-span-3 text-sm text-destructive mt-1">{errors.dataAiHint.message}</p>
+                  <div className="grid grid-cols-4 gap-x-4 mt-1">
+                    <div className="col-span-1" /> {/* Spacer */}
+                    <p className="col-span-3 text-sm text-destructive">{errors.dataAiHint.message}</p>
                   </div>
                 )}
               </div>
               
               <div>
-                <div className="grid grid-cols-4 items-start gap-x-4"> {/* items-start for textarea alignment */}
-                  <Label htmlFor="description" className="text-right text-foreground/80 col-span-1 pt-2">Descrizione</Label> {/* pt-2 to align with textarea text */}
+                <div className="grid grid-cols-4 items-start gap-x-4">
+                  <Label htmlFor="description" className="text-right text-foreground/80 col-span-1 pt-2">Descrizione</Label>
                   <Textarea id="description" {...register("description")} className="col-span-3 min-h-[100px] bg-input border-border focus:border-accent focus:ring-accent" />
                 </div>
                 {errors.description && (
-                  <div className="grid grid-cols-4 gap-x-4">
-                     <p className="col-start-2 col-span-3 text-sm text-destructive mt-1">{errors.description.message}</p>
+                  <div className="grid grid-cols-4 gap-x-4 mt-1">
+                    <div className="col-span-1" /> {/* Spacer */}
+                    <p className="col-span-3 text-sm text-destructive">{errors.description.message}</p>
                   </div>
                 )}
               </div>
               
-              <DialogFooter className="mt-4 sm:mt-2"> {/* Adjusted margin for footer */}
+              <DialogFooter className="mt-4 sm:mt-2">
                 <DialogClose asChild>
                    <Button type="button" variant="outline" onClick={() => { reset(); setIsDialogOpen(false); }}>Annulla</Button>
                 </DialogClose>
