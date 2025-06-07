@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState } from 'react'; // Changed from react-dom and renamed
+import { useActionState } from 'react'; // Corrected from useFormState
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -16,7 +16,8 @@ import AiSuggestions from './AiSuggestions';
 import type { WatchType } from '@/lib/types';
 import React, { useEffect, useState, useCallback } from 'react';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { CheckCircle, AlertCircleIcon, Sparkles, SendIcon, Loader2, useFormStatus } from "lucide-react"; // Added useFormStatus
+import { CheckCircle, AlertCircleIcon, Sparkles, SendIcon, Loader2 } from "lucide-react";
+import { useFormStatus } from 'react-dom'; // Corrected import for useFormStatus
 
 const PersonalizedRequestSchema = z.object({
   name: z.string().min(2, { message: "Il nome deve contenere almeno 2 caratteri." }),
@@ -65,7 +66,6 @@ function SubmitButton() {
 
 export default function RequestForm() {
   const initialState: FormState = { message: '', success: false };
-  // Updated to useActionState
   const [state, formAction] = useActionState(submitPersonalizedRequest, initialState); 
   
   const { register, control, handleSubmit, formState: { errors }, watch, setValue, reset } = useForm<PersonalizedRequestFormData>({
