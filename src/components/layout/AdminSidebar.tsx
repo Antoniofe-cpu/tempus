@@ -1,10 +1,10 @@
+
 'use client';
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import {
-  SidebarProvider,
   Sidebar,
   SidebarHeader,
   SidebarContent,
@@ -29,7 +29,6 @@ export default function AdminSidebar() {
   const pathname = usePathname();
 
   return (
-    <SidebarProvider defaultOpen>
       <Sidebar collapsible="icon" className="border-r border-sidebar-border bg-sidebar">
         <SidebarHeader className="p-4 border-b border-sidebar-border">
           <Link href="/admin" className="flex items-center gap-2">
@@ -69,6 +68,5 @@ export default function AdminSidebar() {
           </Button>
         </SidebarFooter>
       </Sidebar>
-    </SidebarProvider>
   );
 }
