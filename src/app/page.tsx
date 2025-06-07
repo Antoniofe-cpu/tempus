@@ -14,7 +14,7 @@ export default function HomePage() {
         <section className="relative py-20 md:py-32 text-center overflow-hidden">
           <div className="absolute inset-0 opacity-30"> {/* Opacity was increased */}
             <Image
-              src="/hero-watch-mechanism.jpg"
+              src="/hero-watch-mechanism.jpg" // Next.js cerca questo file in `public/hero-watch-mechanism.jpg`
               alt="Dettaglio meccanismo orologio di lusso"
               fill
               style={{ objectFit: 'cover' }}
