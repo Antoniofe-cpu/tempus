@@ -4,7 +4,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Search, Edit, Trash2, RotateCcw, Loader2 } from "lucide-react";
+import { PlusCircle, Search, Edit, Trash2, Loader2 } from "lucide-react"; // Rimossa RotateCcw
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -35,7 +35,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { getWatches, addWatchService, updateWatchService, deleteWatchService, resetMockDataService } from '@/services/watchService';
+import { getWatches, addWatchService, updateWatchService, deleteWatchService, populateFirestoreWithMockDataIfNeeded } from '@/services/watchService';
 import { useToast } from "@/hooks/use-toast";
 
 
@@ -80,11 +80,12 @@ export default function AdminOrologiPage() {
   const fetchAdminWatches = useCallback(async () => {
     setIsLoading(true);
     try {
+      // await populateFirestoreWithMockDataIfNeeded(); // Chiamata per popolare se necessario
       const watches = await getWatches();
       setWatchesList(watches);
     } catch (error) {
       console.error("Errore nel caricamento degli orologi:", error);
-      toast({ title: "Errore", description: "Impossibile caricare gli orologi.", variant: "destructive" });
+      toast({ title: "Errore", description: "Impossibile caricare gli orologi da Firestore.", variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
@@ -141,11 +142,11 @@ export default function AdminOrologiPage() {
         await addWatchService(newWatchData);
         toast({ title: "Successo", description: "Orologio aggiunto con successo." });
       }
-      await fetchAdminWatches(); // Re-fetch per aggiornare la lista
+      await fetchAdminWatches(); 
       resetFormStates();
     } catch (error) {
       console.error("Errore nel salvataggio dell'orologio:", error);
-      toast({ title: "Errore", description: "Impossibile salvare l'orologio.", variant: "destructive" });
+      toast({ title: "Errore", description: "Impossibile salvare l'orologio su Firestore.", variant: "destructive" });
     }
   };
 
@@ -185,37 +186,26 @@ export default function AdminOrologiPage() {
       try {
         await deleteWatchService(watchToDelete.id);
         toast({ title: "Successo", description: `Orologio "${watchToDelete.name}" eliminato.` });
-        await fetchAdminWatches(); // Re-fetch
+        await fetchAdminWatches(); 
         setWatchToDelete(null);
       } catch (error) {
         console.error("Errore nell'eliminazione dell'orologio:", error);
-        toast({ title: "Errore", description: "Impossibile eliminare l'orologio.", variant: "destructive" });
+        toast({ title: "Errore", description: "Impossibile eliminare l'orologio da Firestore.", variant: "destructive" });
       }
     }
   };
   
-  const handleResetMockData = async () => {
-    setIsLoading(true);
-    try {
-      await resetMockDataService();
-      await fetchAdminWatches();
-      toast({ title: "Dati resettati", description: "I dati degli orologi sono stati resettati allo stato iniziale." });
-    } catch (error) {
-      console.error("Errore nel resettare i dati mock:", error);
-      toast({ title: "Errore", description: "Impossibile resettare i dati.", variant: "destructive" });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
+  // Rimuoviamo la funzione handleResetMockData e il relativo pulsante
+  // Se si vuole popolare Firestore con dati mock, si può usare la funzione populateFirestoreWithMockDataIfNeeded()
+  // chiamata una volta o tramite un meccanismo separato.
 
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(event.target.value);
   };
 
   const filteredWatches = watchesList.filter(watch =>
-    watch.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    watch.brand.toLowerCase().includes(searchTerm.toLowerCase())
+    (watch.name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+    (watch.brand?.toLowerCase() || '').includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -223,13 +213,10 @@ export default function AdminOrologiPage() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="font-headline text-4xl font-bold text-primary">Gestione Orologi</h1>
-          <p className="text-muted-foreground mt-1">Aggiungi, modifica o rimuovi orologi dal catalogo Occasioni.</p>
+          <p className="text-muted-foreground mt-1">Aggiungi, modifica o rimuovi orologi dal catalogo Occasioni (dati su Firestore).</p>
         </div>
         <div className="flex gap-2">
-            <Button onClick={handleResetMockData} variant="outline" className="border-destructive text-destructive hover:bg-destructive/10">
-              <RotateCcw className="mr-2 h-5 w-5" />
-              Resetta Dati Mock
-            </Button>
+            {/* Pulsante Resetta Dati Mock rimosso */}
             <Dialog open={isDialogOpen} onOpenChange={(open) => {
               setIsDialogOpen(open);
               if (!open) { 
@@ -318,7 +305,7 @@ export default function AdminOrologiPage() {
       <Card className="bg-card shadow-lg">
         <CardHeader>
            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <CardTitle className="font-headline text-xl text-primary">Catalogo Orologi</CardTitle>
+            <CardTitle className="font-headline text-xl text-primary">Catalogo Orologi (Firestore)</CardTitle>
             <div className="relative w-full sm:w-auto">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input 
@@ -353,21 +340,21 @@ export default function AdminOrologiPage() {
                   <TableCell>
                     <Image 
                         src={watch.imageUrl || 'https://placehold.co/40x40.png'} 
-                        alt={watch.name} 
+                        alt={watch.name || 'Orologio'} 
                         width={40} 
                         height={40} 
                         className="rounded-md object-cover" 
-                        data-ai-hint={watch.dataAiHint || watch.name.split(" ").slice(0,2).join(" ").toLowerCase()}
+                        data-ai-hint={watch.dataAiHint || (watch.name || '').split(" ").slice(0,2).join(" ").toLowerCase()}
                         onError={(e) => {
-                          e.currentTarget.src = 'https://placehold.co/40x40.png'; // Fallback in caso di errore caricamento
+                          e.currentTarget.src = 'https://placehold.co/40x40.png'; 
                           e.currentTarget.srcset = '';
                         }}
                     />
                   </TableCell>
                   <TableCell className="font-medium">{watch.name}</TableCell>
                   <TableCell>{watch.brand}</TableCell>
-                  <TableCell>€{watch.price.toLocaleString('it-IT')}</TableCell>
-                  <TableCell>{watch.stock > 0 ? `${watch.stock} pz.` : <span className="text-destructive">Esaurito</span>}</TableCell>
+                  <TableCell>€{(watch.price || 0).toLocaleString('it-IT')}</TableCell>
+                  <TableCell>{(watch.stock || 0) > 0 ? `${watch.stock} pz.` : <span className="text-destructive">Esaurito</span>}</TableCell>
                   <TableCell className="text-right space-x-2">
                     <Button variant="ghost" size="icon" className="text-primary hover:text-primary/80" onClick={() => handleEditClick(watch)}>
                       <Edit className="h-4 w-4" />
@@ -398,7 +385,8 @@ export default function AdminOrologiPage() {
               )) : (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
-                    {searchTerm ? `Nessun orologio trovato per "${searchTerm}".` : "Nessun orologio nel catalogo. Inizia aggiungendone uno!"}
+                    {searchTerm ? `Nessun orologio trovato per "${searchTerm}".` : 
+                    (isLoading ? "Caricamento orologi..." : "Nessun orologio nel catalogo. Inizia aggiungendone uno o popola Firestore!")}
                   </TableCell>
                 </TableRow>
               )}
@@ -408,11 +396,9 @@ export default function AdminOrologiPage() {
         </CardContent>
       </Card>
       <p className="text-center text-sm text-muted-foreground">
-        Le funzionalità di aggiunta, modifica, eliminazione e ricerca (per nome/marca) sono ora implementate.
-        Le modifiche sono persistenti per la sessione corrente del browser. Per salvare i dati in modo permanente, è necessario configurare un database (es. Firestore).
-        Il pulsante "Resetta Dati Mock" ripristina i dati allo stato originale definito nel codice.
+        I dati degli orologi sono ora gestiti tramite Firestore. Assicurati di aver configurato correttamente `src/lib/firebase.ts` e le regole di sicurezza di Firestore.
+        Puoi chiamare `populateFirestoreWithMockDataIfNeeded()` in `useEffect` (o tramite un pulsante dedicato) per popolare il database con i dati iniziali se è vuoto.
       </p>
     </div>
   );
 }
-

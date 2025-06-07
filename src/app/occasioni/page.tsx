@@ -1,7 +1,7 @@
 
-'use client'; // Necessario per useEffect e useState
+'use client'; 
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import WatchCard from '@/components/WatchCard';
@@ -9,15 +9,8 @@ import { Button } from '@/components/ui/button';
 import { FilterIcon, ArrowDownUpIcon, Loader2 } from 'lucide-react';
 import AiSuggestions from '@/components/AiSuggestions'; 
 import type { Watch } from '@/lib/types';
-import { getWatches } from '@/services/watchService';
+import { getWatches, populateFirestoreWithMockDataIfNeeded } from '@/services/watchService'; // Ora usa il service
 import { useToast } from "@/hooks/use-toast";
-
-// Metadata può essere esportato anche da un client component in versioni recenti di Next.js
-// o definito in un file layout.tsx o page.tsx separato (se fosse server component)
-// export const metadata = {
-//   title: 'Occasioni Esclusive - Tempus Concierge',
-//   description: 'Scopri la nostra selezione di orologi di lusso e pezzi rari.',
-// };
 
 
 export default function OccasioniPage() {
@@ -25,25 +18,27 @@ export default function OccasioniPage() {
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
-  useEffect(() => {
-    async function fetchOccasioniWatches() {
-      setIsLoading(true);
-      try {
-        const data = await getWatches();
-        setWatches(data);
-      } catch (error) {
-        console.error("Errore nel caricamento degli orologi per le occasioni:", error);
-        toast({
-          title: "Errore Caricamento Dati",
-          description: "Impossibile caricare gli orologi. Riprova più tardi.",
-          variant: "destructive",
-        });
-      } finally {
-        setIsLoading(false);
-      }
+  const fetchOccasioniWatches = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      // await populateFirestoreWithMockDataIfNeeded(); // Chiamata per popolare se necessario la prima volta
+      const data = await getWatches(); // Prende i dati da Firestore tramite il service
+      setWatches(data);
+    } catch (error) {
+      console.error("Errore nel caricamento degli orologi per le occasioni (Firestore):", error);
+      toast({
+        title: "Errore Caricamento Dati",
+        description: "Impossibile caricare gli orologi da Firestore. Riprova più tardi.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
     }
-    fetchOccasioniWatches();
   }, [toast]);
+
+  useEffect(() => {
+    fetchOccasioniWatches();
+  }, [fetchOccasioniWatches]);
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
@@ -60,7 +55,7 @@ export default function OccasioniPage() {
 
         <div className="mb-8 flex flex-col sm:flex-row justify-between items-center gap-4">
           <p className="text-sm text-muted-foreground">
-            {isLoading ? 'Caricamento...' : `Mostrando ${watches.length} orologi`}
+            {isLoading ? 'Caricamento orologi...' : `Mostrando ${watches.length} orologi da Firestore`}
           </p>
           <div className="flex gap-2">
             <Button variant="outline" className="border-primary text-primary hover:bg-primary/10">
@@ -84,8 +79,8 @@ export default function OccasioniPage() {
           </div>
         ) : (
           <div className="text-center py-16 text-muted-foreground">
-            <p className="text-xl mb-2">Nessun orologio disponibile al momento.</p>
-            <p>Torna a trovarci presto per scoprire le nuove occasioni!</p>
+            <p className="text-xl mb-2">Nessun orologio disponibile al momento su Firestore.</p>
+            <p>Aggiungi orologi tramite la sezione admin o popola il database.</p>
           </div>
         )}
         
@@ -93,7 +88,7 @@ export default function OccasioniPage() {
            <h2 className="font-headline text-3xl md:text-4xl font-bold text-center text-primary mb-8">
             Suggerimenti <span className="text-accent">dall'Esperto AI</span>
           </h2>
-          <AiSuggestions initialCriteria="orologi di lusso popolari e di tendenza nel 2024" context="occasioni" />
+          <AiSuggestions initialCriteria="orologi di lusso popolari e di tendenza" context="occasioni" />
         </section>
 
       </main>
