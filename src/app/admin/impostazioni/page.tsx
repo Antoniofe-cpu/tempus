@@ -4,7 +4,7 @@ import { Settings } from "lucide-react";
 
 export default function AdminImpostazioniPage() {
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 w-full">
       <div>
         <h1 className="font-headline text-4xl font-bold text-primary">Impostazioni Applicazione</h1>
         <p className="text-muted-foreground mt-1">Configura le impostazioni generali di Tempus Concierge.</p>

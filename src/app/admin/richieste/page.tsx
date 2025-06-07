@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, Search } from "lucide-react";
@@ -14,7 +15,7 @@ const mockRequests = [
 
 export default function AdminRichiestePage() {
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 w-full">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="font-headline text-4xl font-bold text-primary">Gestione Richieste Clienti</h1>
