@@ -2,30 +2,16 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-  font-family: Arial, Helvetica, sans-serif;
-}
-
 @layer base {
-  /* * {
-    @apply border-border;
-  } */ /* Rimosso questa regola globale */
   body {
     @apply bg-background text-foreground;
+    font-family: Arial, Helvetica, sans-serif;
   }
-}
 
-/* Animation for settings icon */
-@keyframes spin-slow {
-  to {
-    transform: rotate(360deg);
-  }
-}
-.animate-spin-slow {
-  animation: spin-slow 5s linear infinite;
-}
+  /* * {
+    @apply border-border;
+  } */ /* Regola globale per i bordi commentata/rimossa per evitare problemi di layout */
 
-@layer base {
   :root {
     --background: 0 0% 100%;
     --foreground: 200 14% 18%; /* Dark gray for light theme text */
@@ -100,4 +86,14 @@ body {
     --sidebar-border: 200 14% 20%;
     --sidebar-ring: 51 100% 50%; /* Gold */
   }
+}
+
+/* Animation for settings icon */
+@keyframes spin-slow {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.animate-spin-slow {
+  animation: spin-slow 5s linear infinite;
 }
