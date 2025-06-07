@@ -17,7 +17,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle as DialogT,
-  DialogTrigger,
   DialogClose,
 } from "@/components/ui/dialog";
 import { useForm } from 'react-hook-form';
@@ -46,9 +45,9 @@ const WatchFormSchema = z.object({
   stock: z.coerce.number().int().min(0, { message: "La disponibilità non può essere negativa." }),
   imageUrl: z.string().url({ message: "Inserisci un URL valido per l'immagine." }).optional().or(z.literal('')),
   description: z.string().min(5, { message: "La descrizione deve contenere almeno 5 caratteri." }),
-  dataAiHint: z.string().max(30, { message: "L'hint AI non può superare 30 caratteri." }).optional(),
-  rarity: z.string().optional(),
-  condition: z.string().optional(),
+  dataAiHint: z.string().max(30, { message: "L'hint AI non può superare 30 caratteri." }).optional().default(''),
+  rarity: z.string().optional().default(''),
+  condition: z.string().optional().default(''),
 });
 
 type WatchFormData = z.infer<typeof WatchFormSchema>;
@@ -80,9 +79,6 @@ export default function AdminOrologiPage() {
   const fetchAdminWatches = useCallback(async () => {
     setIsLoading(true);
     try {
-      // Tenta di popolare Firestore con i dati mock se la collezione è vuota.
-      // Questa operazione è sicura perché `populateFirestoreWithMockDataIfNeeded`
-      // controlla internamente se la collezione è già popolata.
       await populateFirestoreWithMockDataIfNeeded();
       const watches = await getWatches();
       setWatchesList(watches);
@@ -103,7 +99,12 @@ export default function AdminOrologiPage() {
       if (editingWatch) {
         reset({
           ...editingWatch,
+          price: editingWatch.price || 0,
+          stock: editingWatch.stock || 0,
           imageUrl: editingWatch.imageUrl || 'https://placehold.co/600x400.png',
+          dataAiHint: editingWatch.dataAiHint || '',
+          rarity: editingWatch.rarity || '',
+          condition: editingWatch.condition || '',
         });
       } else {
         reset({ 
@@ -123,33 +124,40 @@ export default function AdminOrologiPage() {
 
 
   const onSubmit = async (data: WatchFormData) => {
+    console.log('Dati del form prima dell\'invio:', data);
     try {
+      const watchPayload = {
+        name: data.name,
+        brand: data.brand,
+        price: Number(data.price),
+        stock: Number(data.stock),
+        description: data.description,
+        imageUrl: data.imageUrl || `https://placehold.co/600x400.png`,
+        dataAiHint: data.dataAiHint || data.name.split(" ").slice(0,2).join(" ").toLowerCase() || 'orologio generico',
+        rarity: data.rarity || '',
+        condition: data.condition || '',
+      };
+
+      // Rimuovi chiavi con stringhe vuote se non devono essere salvate come tali,
+      // o lasciale se lo schema Firestore le accetta/ignora.
+      // Per ora, le inviamo. Firestore dovrebbe ignorare i campi stringa vuoti se non sono nello schema con valori di default.
+      // La logica in watchService.ts per rimuovere `undefined` è comunque utile.
+
       if (editingWatch) {
-        const watchUpdateData: Partial<Omit<WatchType, 'id'>> = {
-          ...data,
-          price: Number(data.price),
-          stock: Number(data.stock),
-          imageUrl: data.imageUrl || editingWatch.imageUrl || `https://placehold.co/600x400.png`,
-          dataAiHint: data.dataAiHint || editingWatch.dataAiHint || data.name.split(" ").slice(0,2).join(" ").toLowerCase(),
-        };
-        await updateWatchService(editingWatch.id, watchUpdateData);
+        console.log('Tentativo di MODIFICA orologio con ID:', editingWatch.id, 'Payload:', watchPayload);
+        await updateWatchService(editingWatch.id, watchPayload);
         toast({ title: "Successo", description: "Orologio modificato con successo." });
       } else {
-        const newWatchData: Omit<WatchType, 'id'> = {
-          ...data,
-          price: Number(data.price),
-          stock: Number(data.stock),
-          imageUrl: data.imageUrl || `https://placehold.co/600x400.png`,
-          dataAiHint: data.dataAiHint || data.name.split(" ").slice(0,2).join(" ").toLowerCase(),
-        };
-        await addWatchService(newWatchData);
+        console.log('Tentativo di AGGIUNTA nuovo orologio. Payload:', watchPayload);
+        await addWatchService(watchPayload as Omit<WatchType, 'id'>); // Cast perché manca 'id'
         toast({ title: "Successo", description: "Orologio aggiunto con successo." });
       }
       await fetchAdminWatches(); 
       resetFormStates();
-    } catch (error) {
-      console.error("Errore nel salvataggio dell'orologio:", error);
-      toast({ title: "Errore", description: "Impossibile salvare l'orologio su Firestore.", variant: "destructive" });
+    } catch (error: any) {
+      console.error("Errore onSubmit nel salvataggio dell'orologio:", error);
+      const errorMessage = error.message || "Impossibile salvare l'orologio su Firestore. Controlla la console per dettagli.";
+      toast({ title: "Errore", description: errorMessage, variant: "destructive" });
     }
   };
 
@@ -191,9 +199,10 @@ export default function AdminOrologiPage() {
         toast({ title: "Successo", description: `Orologio "${watchToDelete.name}" eliminato.` });
         await fetchAdminWatches(); 
         setWatchToDelete(null);
-      } catch (error) {
+      } catch (error: any) {
         console.error("Errore nell'eliminazione dell'orologio:", error);
-        toast({ title: "Errore", description: "Impossibile eliminare l'orologio da Firestore.", variant: "destructive" });
+        const errorMessage = error.message || "Impossibile eliminare l'orologio da Firestore.";
+        toast({ title: "Errore", description: errorMessage, variant: "destructive" });
       }
     }
   };
@@ -250,13 +259,13 @@ export default function AdminOrologiPage() {
 
                   <div>
                     <Label htmlFor="price" className="text-foreground/80 block mb-1.5">Prezzo (€)</Label>
-                    <Input id="price" type="number" {...register("price")} className="bg-input border-border focus:border-accent focus:ring-accent" />
+                    <Input id="price" type="number" step="0.01" {...register("price")} className="bg-input border-border focus:border-accent focus:ring-accent" />
                     {errors.price && <p className="text-sm text-destructive mt-1">{errors.price.message}</p>}
                   </div>
                   
                   <div>
                     <Label htmlFor="stock" className="text-foreground/80 block mb-1.5">Disponibilità</Label>
-                    <Input id="stock" type="number" {...register("stock")} className="bg-input border-border focus:border-accent focus:ring-accent" />
+                    <Input id="stock" type="number" step="1" {...register("stock")} className="bg-input border-border focus:border-accent focus:ring-accent" />
                     {errors.stock && <p className="text-sm text-destructive mt-1">{errors.stock.message}</p>}
                   </div>
                   
@@ -400,3 +409,5 @@ export default function AdminOrologiPage() {
     </div>
   );
 }
+
+    
