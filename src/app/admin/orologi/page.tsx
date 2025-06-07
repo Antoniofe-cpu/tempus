@@ -88,55 +88,55 @@ export default function AdminOrologiPage() {
           </DialogTrigger>
           <DialogContent className="sm:max-w-lg bg-card border-border/60 shadow-xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
-              <DialogT className="font-headline text-2xl text-primary">Aggiungi Nuovo Orologio</DialogT>
-              <DialogDesc className="text-muted-foreground">
+              <DialogT className="font-headline text-2xl text-primary text-left">Aggiungi Nuovo Orologio</DialogT>
+              <DialogDesc className="text-muted-foreground text-left">
                 Inserisci i dettagli del nuovo orologio da aggiungere al catalogo.
               </DialogDesc>
             </DialogHeader>
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 py-4 px-1"> {/* Adjusted space and added padding for scrollbar */}
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 py-4 px-0">
               <div>
-                <Label htmlFor="name" className="text-foreground/80">Nome Orologio</Label>
-                <Input id="name" {...register("name")} className="mt-1 bg-input border-border focus:border-accent focus:ring-accent" />
+                <Label htmlFor="name" className="text-foreground/80 block mb-1.5">Nome Orologio</Label>
+                <Input id="name" {...register("name")} className="bg-input border-border focus:border-accent focus:ring-accent" />
                 {errors.name && <p className="text-sm text-destructive mt-1">{errors.name.message}</p>}
               </div>
               
               <div>
-                <Label htmlFor="brand" className="text-foreground/80">Marca</Label>
-                <Input id="brand" {...register("brand")} className="mt-1 bg-input border-border focus:border-accent focus:ring-accent" />
+                <Label htmlFor="brand" className="text-foreground/80 block mb-1.5">Marca</Label>
+                <Input id="brand" {...register("brand")} className="bg-input border-border focus:border-accent focus:ring-accent" />
                 {errors.brand && <p className="text-sm text-destructive mt-1">{errors.brand.message}</p>}
               </div>
 
               <div>
-                <Label htmlFor="price" className="text-foreground/80">Prezzo (€)</Label>
-                <Input id="price" type="number" {...register("price")} className="mt-1 bg-input border-border focus:border-accent focus:ring-accent" />
+                <Label htmlFor="price" className="text-foreground/80 block mb-1.5">Prezzo (€)</Label>
+                <Input id="price" type="number" {...register("price")} className="bg-input border-border focus:border-accent focus:ring-accent" />
                 {errors.price && <p className="text-sm text-destructive mt-1">{errors.price.message}</p>}
               </div>
               
               <div>
-                <Label htmlFor="stock" className="text-foreground/80">Disponibilità</Label>
-                <Input id="stock" type="number" {...register("stock")} className="mt-1 bg-input border-border focus:border-accent focus:ring-accent" />
+                <Label htmlFor="stock" className="text-foreground/80 block mb-1.5">Disponibilità</Label>
+                <Input id="stock" type="number" {...register("stock")} className="bg-input border-border focus:border-accent focus:ring-accent" />
                 {errors.stock && <p className="text-sm text-destructive mt-1">{errors.stock.message}</p>}
               </div>
               
               <div>
-                <Label htmlFor="imageUrl" className="text-foreground/80">URL Immagine</Label>
-                <Input id="imageUrl" {...register("imageUrl")} placeholder="https://placehold.co/600x400.png" className="mt-1 bg-input border-border focus:border-accent focus:ring-accent" />
+                <Label htmlFor="imageUrl" className="text-foreground/80 block mb-1.5">URL Immagine</Label>
+                <Input id="imageUrl" {...register("imageUrl")} placeholder="https://placehold.co/600x400.png" className="bg-input border-border focus:border-accent focus:ring-accent" />
                 {errors.imageUrl && <p className="text-sm text-destructive mt-1">{errors.imageUrl.message}</p>}
               </div>
 
               <div>
-                <Label htmlFor="dataAiHint" className="text-foreground/80">Hint AI per Immagine (max 2 parole)</Label>
-                <Input id="dataAiHint" {...register("dataAiHint")} placeholder="es. rolex submariner" className="mt-1 bg-input border-border focus:border-accent focus:ring-accent" />
+                <Label htmlFor="dataAiHint" className="text-foreground/80 block mb-1.5">Hint AI per Immagine (max 2 parole)</Label>
+                <Input id="dataAiHint" {...register("dataAiHint")} placeholder="es. rolex submariner" className="bg-input border-border focus:border-accent focus:ring-accent" />
                 {errors.dataAiHint && <p className="text-sm text-destructive mt-1">{errors.dataAiHint.message}</p>}
               </div>
               
               <div>
-                <Label htmlFor="description" className="text-foreground/80">Descrizione</Label>
-                <Textarea id="description" {...register("description")} className="mt-1 min-h-[100px] bg-input border-border focus:border-accent focus:ring-accent" />
+                <Label htmlFor="description" className="text-foreground/80 block mb-1.5">Descrizione</Label>
+                <Textarea id="description" {...register("description")} className="min-h-[100px] bg-input border-border focus:border-accent focus:ring-accent" />
                 {errors.description && <p className="text-sm text-destructive mt-1">{errors.description.message}</p>}
               </div>
               
-              <DialogFooter className="mt-2 pt-4 border-t border-border/40"> {/* Added border for separation */}
+              <DialogFooter className="mt-2 pt-4 border-t border-border/40">
                 <DialogClose asChild>
                    <Button type="button" variant="outline" onClick={() => { reset(); setIsDialogOpen(false); }}>Annulla</Button>
                 </DialogClose>
