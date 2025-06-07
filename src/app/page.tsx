@@ -73,7 +73,7 @@ export default function HomePage() {
               Benvenuto in <span className="text-accent">Tempus Concierge</span>
             </h1>
             <p className="text-xl md:text-2xl text-foreground/80 max-w-3xl mx-auto mb-10">
-              Il tuo partner esclusivo nel mondo dell'alta orologeria. Realizziamo i tuoi sogni, un orologio alla volta.
+              Questo è un testo di prova per verificare il push da Firebase Studio! Troviamo orologi unici.
             </p>
             <div className="space-x-0 space-y-4 sm:space-y-0 sm:space-x-4">
               <Button asChild size="lg" className="bg-accent hover:bg-accent/90 text-accent-foreground font-semibold group">
