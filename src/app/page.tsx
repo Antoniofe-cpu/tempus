@@ -12,9 +12,9 @@ export default function HomePage() {
       <Header />
       <main className="flex-grow">
         <section className="relative py-20 md:py-32 text-center overflow-hidden">
-          <div className="absolute inset-0 opacity-30"> {/* Opacity was increased */}
+          <div className="absolute inset-0 opacity-30">
             <Image
-              src="/hero-watch-mechanism.jpg" // Next.js cerca questo file in `public/hero-watch-mechanism.jpg`
+              src="https://placehold.co/1920x1080.png" 
               alt="Dettaglio meccanismo orologio di lusso"
               fill
               style={{ objectFit: 'cover' }}
