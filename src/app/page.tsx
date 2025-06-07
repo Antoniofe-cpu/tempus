@@ -1,27 +1,71 @@
 
+'use client';
+
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowRight, WatchIcon, GemIcon, SearchIcon } from 'lucide-react';
+import { ArrowRight, WatchIcon, GemIcon, SearchIcon, Loader2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { generateHeroImage } from '@/ai/flows/generate-hero-image-flow';
 
 export default function HomePage() {
+  const [heroImageUrl, setHeroImageUrl] = useState<string | null>(null);
+  const [isLoadingImage, setIsLoadingImage] = useState(true);
+
+  useEffect(() => {
+    async function fetchHeroImage() {
+      setIsLoadingImage(true);
+      try {
+        const result = await generateHeroImage({ prompt: "Immagine artistica di un meccanismo di orologio di lusso, dettagliato e illuminato in modo suggestivo." });
+        if (result.imageUrl) {
+          setHeroImageUrl(result.imageUrl);
+        } else {
+          // Fallback a un placeholder se la generazione fallisce o non restituisce URL
+          setHeroImageUrl("https://placehold.co/1920x1080.png?text=Loading+Image...");
+        }
+      } catch (error) {
+        console.error("Failed to generate hero image:", error);
+        setHeroImageUrl("https://placehold.co/1920x1080.png?text=Error+Loading+Image");
+      } finally {
+        setIsLoadingImage(false);
+      }
+    }
+    fetchHeroImage();
+  }, []);
+
   return (
     <div className="flex flex-col min-h-screen bg-background">
       <Header />
       <main className="flex-grow">
-        <section className="relative py-20 md:py-32 text-center overflow-hidden">
+        <section className="relative py-20 md:py-32 text-center overflow-hidden min-h-[400px] md:min-h-[500px] flex items-center justify-center">
           <div className="absolute inset-0 opacity-30">
-            <Image
-              src="https://placehold.co/1920x1080.png" 
-              alt="Dettaglio meccanismo orologio di lusso"
-              fill
-              style={{ objectFit: 'cover' }}
-              quality={80}
-              priority
-              data-ai-hint="watch movement"
-            />
+            {isLoadingImage && (
+              <div className="absolute inset-0 flex items-center justify-center bg-background/50 z-10">
+                <Loader2 className="h-12 w-12 text-accent animate-spin" />
+              </div>
+            )}
+            {heroImageUrl && (
+              <Image
+                src={heroImageUrl}
+                alt="Dettaglio meccanismo orologio di lusso generato da AI"
+                fill
+                style={{ objectFit: 'cover' }}
+                quality={80}
+                // Priority è rimosso perché l'immagine è caricata client-side
+                // data-ai-hint non è più necessario come prima se l'immagine è generata dinamicamente
+              />
+            )}
+             {!heroImageUrl && !isLoadingImage && ( // Mostra un placeholder fisso se tutto fallisce e non sta caricando
+              <Image
+                src="https://placehold.co/1920x1080.png?text=Luxury+Watches"
+                alt="Placeholder orologio di lusso"
+                fill
+                style={{ objectFit: 'cover' }}
+                quality={80}
+              />
+            )}
           </div>
           <div className="container relative z-10 mx-auto px-4">
             <WatchIcon className="mx-auto h-20 w-20 text-accent mb-6 animate-pulse" />
