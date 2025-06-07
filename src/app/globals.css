@@ -101,12 +101,3 @@ body {
     --sidebar-ring: 51 100% 50%; /* Gold */
   }
 }
-
-@layer base {
-  * {
-    @apply border-border;
-  }
-  body {
-    @apply bg-background text-foreground;
-  }
-}
