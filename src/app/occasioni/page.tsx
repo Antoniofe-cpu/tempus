@@ -1,55 +1,11 @@
+
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import WatchCard from '@/components/WatchCard';
-import type { Watch } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { FilterIcon, ArrowDownUpIcon } from 'lucide-react';
 import AiSuggestions from '@/components/AiSuggestions'; 
-
-const featuredWatches: Watch[] = [
-  {
-    id: '1',
-    name: 'Rolex Submariner Date',
-    brand: 'Rolex',
-    price: 13500,
-    imageUrl: 'https://placehold.co/600x400.png',
-    dataAiHint: 'Rolex Submariner',
-    description: 'Iconico orologio subacqueo, un classico intramontabile per ogni collezione.',
-    rarity: 'Molto Richiesto',
-    condition: 'Nuovo',
-  },
-  {
-    id: '2',
-    name: 'Omega Speedmaster Professional',
-    brand: 'Omega',
-    price: 7200,
-    imageUrl: 'https://placehold.co/600x400.png',
-    dataAiHint: 'Omega Speedmaster',
-    description: 'Il leggendario "Moonwatch", un pezzo di storia al polso.',
-    condition: 'Mint',
-  },
-  {
-    id: '3',
-    name: 'Patek Philippe Nautilus 5711',
-    brand: 'Patek Philippe',
-    price: 150000,
-    imageUrl: 'https://placehold.co/600x400.png',
-    dataAiHint: 'Patek Nautilus',
-    description: 'Eleganza sportiva e design inconfondibile, un vero status symbol.',
-    rarity: 'Ultra Raro',
-    condition: 'Pre-owned Certificato',
-  },
-  {
-    id: '4',
-    name: 'Audemars Piguet Royal Oak',
-    brand: 'Audemars Piguet',
-    price: 55000,
-    imageUrl: 'https://placehold.co/600x400.png',
-    dataAiHint: 'Audemars RoyalOak',
-    description: 'Design audace e finiture impeccabili per un orologio che non passa inosservato.',
-    condition: 'Nuovo',
-  },
-];
+import { watchesData } from '@/lib/mock-data'; // Importa i dati centralizzati
 
 export const metadata = {
   title: 'Occasioni Esclusive - Tempus Concierge',
@@ -71,7 +27,7 @@ export default function OccasioniPage() {
         </div>
 
         <div className="mb-8 flex flex-col sm:flex-row justify-between items-center gap-4">
-          <p className="text-sm text-muted-foreground">Mostrando {featuredWatches.length} orologi</p>
+          <p className="text-sm text-muted-foreground">Mostrando {watchesData.length} orologi</p>
           <div className="flex gap-2">
             <Button variant="outline" className="border-primary text-primary hover:bg-primary/10">
               <FilterIcon className="mr-2 h-4 w-4" /> Filtra
@@ -83,7 +39,7 @@ export default function OccasioniPage() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-          {featuredWatches.map((watch) => (
+          {watchesData.map((watch) => (
             <WatchCard key={watch.id} watch={watch} />
           ))}
         </div>

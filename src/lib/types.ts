@@ -1,8 +1,10 @@
+
 export interface Watch {
   id: string;
   name: string;
   brand: string;
   price: number;
+  stock: number; // Aggiunto per coerenza con i dati admin
   imageUrl: string;
   description: string;
   rarity?: string; // e.g., "Limited Edition", "Rare Vintage"

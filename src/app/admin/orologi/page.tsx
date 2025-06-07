@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, Search, Edit, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -24,6 +24,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import type { Watch as WatchType } from '@/lib/types';
+import { watchesData } from '@/lib/mock-data'; // Importa i dati centralizzati
 import {
   AlertDialog,
   AlertDialogAction,
@@ -36,13 +37,6 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
-const initialMockWatches: WatchType[] = [
-  { id: "WR001", name: "Rolex Submariner Date", brand: "Rolex", price: 13500, stock: 2, imageUrl: "https://placehold.co/40x40.png", dataAiHint: "Rolex Submariner", description: "Iconico orologio subacqueo, un classico intramontabile." },
-  { id: "WO002", name: "Omega Speedmaster Pro", brand: "Omega", price: 7200, stock: 5, imageUrl: "https://placehold.co/40x40.png", dataAiHint: "Omega Speedmaster", description: "Il leggendario Moonwatch, ricco di storia." },
-  { id: "WPP003", name: "Patek Philippe Nautilus", brand: "Patek Philippe", price: 150000, stock: 1, imageUrl: "https://placehold.co/40x40.png", dataAiHint: "Patek Nautilus", description: "Eleganza sportiva e design inconfondibile." },
-  { id: "WAP004", name: "Audemars Piguet Royal Oak", brand: "Audemars Piguet", price: 55000, stock: 2, imageUrl: "https://placehold.co/40x40.png", dataAiHint: "Audemars RoyalOak", description: "Design audace e finiture impeccabili per un orologio che non passa inosservato." },
-];
-
 const WatchFormSchema = z.object({
   name: z.string().min(2, { message: "Il nome deve contenere almeno 2 caratteri." }),
   brand: z.string().min(2, { message: "La marca deve contenere almeno 2 caratteri." }),
@@ -51,12 +45,14 @@ const WatchFormSchema = z.object({
   imageUrl: z.string().url({ message: "Inserisci un URL valido per l'immagine." }).optional().or(z.literal('')),
   description: z.string().min(5, { message: "La descrizione deve contenere almeno 5 caratteri." }),
   dataAiHint: z.string().max(30, { message: "L'hint AI non può superare 30 caratteri." }).optional(),
+  rarity: z.string().optional(),
+  condition: z.string().optional(),
 });
 
 type WatchFormData = z.infer<typeof WatchFormSchema>;
 
 export default function AdminOrologiPage() {
-  const [watchesList, setWatchesList] = useState<WatchType[]>(initialMockWatches);
+  const [watchesList, setWatchesList] = useState<WatchType[]>([...watchesData]); // Usa una copia per modifiche locali
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingWatch, setEditingWatch] = useState<WatchType | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -72,6 +68,8 @@ export default function AdminOrologiPage() {
       imageUrl: '',
       description: '',
       dataAiHint: '',
+      rarity: '',
+      condition: '',
     }
   });
 
@@ -85,9 +83,11 @@ export default function AdminOrologiPage() {
             brand: '',
             price: 0,
             stock: 0,
-            imageUrl: '',
+            imageUrl: 'https://placehold.co/600x400.png',
             description: '',
             dataAiHint: '',
+            rarity: '',
+            condition: '',
         });
       }
     }
@@ -101,7 +101,7 @@ export default function AdminOrologiPage() {
         ...data,
         price: Number(data.price),
         stock: Number(data.stock),
-        imageUrl: data.imageUrl || editingWatch.imageUrl || `https://placehold.co/40x40.png`,
+        imageUrl: data.imageUrl || editingWatch.imageUrl || `https://placehold.co/600x400.png`,
         dataAiHint: data.dataAiHint || editingWatch.dataAiHint || data.name.split(" ").slice(0,2).join(" ").toLowerCase(),
       };
       setWatchesList(prev => prev.map(w => w.id === editingWatch.id ? updatedWatch : w));
@@ -111,7 +111,7 @@ export default function AdminOrologiPage() {
         id: `W${Date.now().toString().slice(-5)}`,
         price: Number(data.price),
         stock: Number(data.stock),
-        imageUrl: data.imageUrl || `https://placehold.co/40x40.png`,
+        imageUrl: data.imageUrl || `https://placehold.co/600x400.png`,
         dataAiHint: data.dataAiHint || data.name.split(" ").slice(0,2).join(" ").toLowerCase(),
       };
       setWatchesList(prev => [newWatch, ...prev]);
@@ -127,7 +127,17 @@ export default function AdminOrologiPage() {
 
   const handleAddNewClick = () => {
     setEditingWatch(null);
-    reset(); 
+    reset({ 
+      name: '',
+      brand: '',
+      price: 0,
+      stock: 0,
+      imageUrl: 'https://placehold.co/600x400.png',
+      description: '',
+      dataAiHint: '',
+      rarity: '',
+      condition: '',
+    }); 
     setIsDialogOpen(true);
   };
 
@@ -218,6 +228,16 @@ export default function AdminOrologiPage() {
                 <Label htmlFor="dataAiHint" className="text-foreground/80 block mb-1.5">Hint AI per Immagine (max 2 parole)</Label>
                 <Input id="dataAiHint" {...register("dataAiHint")} placeholder="es. rolex submariner" className="bg-input border-border focus:border-accent focus:ring-accent" />
                 {errors.dataAiHint && <p className="text-sm text-destructive mt-1">{errors.dataAiHint.message}</p>}
+              </div>
+
+              <div>
+                <Label htmlFor="rarity" className="text-foreground/80 block mb-1.5">Rarità (Opzionale)</Label>
+                <Input id="rarity" {...register("rarity")} placeholder="Es. Limited Edition" className="bg-input border-border focus:border-accent focus:ring-accent" />
+              </div>
+
+              <div>
+                <Label htmlFor="condition" className="text-foreground/80 block mb-1.5">Condizione (Opzionale)</Label>
+                <Input id="condition" {...register("condition")} placeholder="Es. Nuovo, Mint" className="bg-input border-border focus:border-accent focus:ring-accent" />
               </div>
               
               <div>
@@ -318,6 +338,3 @@ export default function AdminOrologiPage() {
     </div>
   );
 }
-    
-
-    
