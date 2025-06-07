@@ -80,7 +80,7 @@ export default function AdminOrologiPage() {
       if (editingWatch) {
         reset(editingWatch);
       } else {
-        reset({ // Reset to default empty values for new watch
+        reset({ 
             name: '',
             brand: '',
             price: 0,
@@ -96,7 +96,6 @@ export default function AdminOrologiPage() {
 
   const onSubmit = (data: WatchFormData) => {
     if (editingWatch) {
-      // Edit existing watch
       const updatedWatch: WatchType = {
         ...editingWatch,
         ...data,
@@ -107,7 +106,6 @@ export default function AdminOrologiPage() {
       };
       setWatchesList(prev => prev.map(w => w.id === editingWatch.id ? updatedWatch : w));
     } else {
-      // Add new watch
       const newWatch: WatchType = {
         ...data,
         id: `W${Date.now().toString().slice(-5)}`,
@@ -129,13 +127,12 @@ export default function AdminOrologiPage() {
 
   const handleAddNewClick = () => {
     setEditingWatch(null);
-    reset(); // Clear form for new entry
+    reset(); 
     setIsDialogOpen(true);
   };
 
   const handleEditClick = (watch: WatchType) => {
     setEditingWatch(watch);
-    // useEffect will handle resetting the form with watch data when dialog opens
     setIsDialogOpen(true);
   };
 
@@ -168,7 +165,7 @@ export default function AdminOrologiPage() {
         </div>
         <Dialog open={isDialogOpen} onOpenChange={(open) => {
           setIsDialogOpen(open);
-          if (!open) { // If dialog is closing
+          if (!open) { 
             setEditingWatch(null);
             reset();
           }
@@ -316,9 +313,11 @@ export default function AdminOrologiPage() {
         </CardContent>
       </Card>
       <p className="text-center text-sm text-muted-foreground">
-        Le funzionalità di aggiunta, modifica, eliminazione e ricerca (per nome/marca) sono ora implementate.
+        Le funzionalità di aggiunta, modifica, eliminazione e ricerca (per nome/marca) sono ora implementate. Le modifiche sono temporanee e non persistono dopo il ricaricamento della pagina.
       </p>
     </div>
   );
 }
+    
+
     
