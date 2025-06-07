@@ -93,64 +93,93 @@ export default function AdminOrologiPage() {
                 Inserisci i dettagli del nuovo orologio da aggiungere al catalogo.
               </DialogDesc>
             </DialogHeader>
-            <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4 py-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="name" className="text-right text-foreground/80">
-                  Nome
-                </Label>
-                <Input id="name" {...register("name")} className="col-span-3 bg-input border-border focus:border-accent focus:ring-accent" />
-              </div>
-              {errors.name && <p className="col-span-4 text-sm text-destructive text-right -mt-2">{errors.name.message}</p>}
+            <form onSubmit={handleSubmit(onSubmit)} className="grid gap-5 py-4"> {/* Increased gap for better separation */}
               
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="brand" className="text-right text-foreground/80">
-                  Marca
-                </Label>
-                <Input id="brand" {...register("brand")} className="col-span-3 bg-input border-border focus:border-accent focus:ring-accent" />
+              <div>
+                <div className="grid grid-cols-4 items-center gap-x-4">
+                  <Label htmlFor="name" className="text-right text-foreground/80 col-span-1">Nome</Label>
+                  <Input id="name" {...register("name")} className="col-span-3 bg-input border-border focus:border-accent focus:ring-accent" />
+                </div>
+                {errors.name && (
+                  <div className="grid grid-cols-4 gap-x-4">
+                    <p className="col-start-2 col-span-3 text-sm text-destructive mt-1">{errors.name.message}</p>
+                  </div>
+                )}
               </div>
-              {errors.brand && <p className="col-span-4 text-sm text-destructive text-right -mt-2">{errors.brand.message}</p>}
+              
+              <div>
+                <div className="grid grid-cols-4 items-center gap-x-4">
+                  <Label htmlFor="brand" className="text-right text-foreground/80 col-span-1">Marca</Label>
+                  <Input id="brand" {...register("brand")} className="col-span-3 bg-input border-border focus:border-accent focus:ring-accent" />
+                </div>
+                {errors.brand && (
+                  <div className="grid grid-cols-4 gap-x-4">
+                    <p className="col-start-2 col-span-3 text-sm text-destructive mt-1">{errors.brand.message}</p>
+                  </div>
+                )}
+              </div>
 
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="price" className="text-right text-foreground/80">
-                  Prezzo (€)
-                </Label>
-                <Input id="price" type="number" {...register("price")} className="col-span-3 bg-input border-border focus:border-accent focus:ring-accent" />
+              <div>
+                <div className="grid grid-cols-4 items-center gap-x-4">
+                  <Label htmlFor="price" className="text-right text-foreground/80 col-span-1">Prezzo (€)</Label>
+                  <Input id="price" type="number" {...register("price")} className="col-span-3 bg-input border-border focus:border-accent focus:ring-accent" />
+                </div>
+                {errors.price && (
+                  <div className="grid grid-cols-4 gap-x-4">
+                    <p className="col-start-2 col-span-3 text-sm text-destructive mt-1">{errors.price.message}</p>
+                  </div>
+                )}
               </div>
-              {errors.price && <p className="col-span-4 text-sm text-destructive text-right -mt-2">{errors.price.message}</p>}
 
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="stock" className="text-right text-foreground/80">
-                  Disponibilità
-                </Label>
-                <Input id="stock" type="number" {...register("stock")} className="col-span-3 bg-input border-border focus:border-accent focus:ring-accent" />
+              <div>
+                <div className="grid grid-cols-4 items-center gap-x-4">
+                  <Label htmlFor="stock" className="text-right text-foreground/80 col-span-1">Disponibilità</Label>
+                  <Input id="stock" type="number" {...register("stock")} className="col-span-3 bg-input border-border focus:border-accent focus:ring-accent" />
+                </div>
+                {errors.stock && (
+                  <div className="grid grid-cols-4 gap-x-4">
+                    <p className="col-start-2 col-span-3 text-sm text-destructive mt-1">{errors.stock.message}</p>
+                  </div>
+                )}
               </div>
-              {errors.stock && <p className="col-span-4 text-sm text-destructive text-right -mt-2">{errors.stock.message}</p>}
               
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="imageUrl" className="text-right text-foreground/80">
-                  URL Immagine
-                </Label>
-                <Input id="imageUrl" {...register("imageUrl")} placeholder="https://placehold.co/40x40.png" className="col-span-3 bg-input border-border focus:border-accent focus:ring-accent" />
+              <div>
+                <div className="grid grid-cols-4 items-center gap-x-4">
+                  <Label htmlFor="imageUrl" className="text-right text-foreground/80 col-span-1">URL Immagine</Label>
+                  <Input id="imageUrl" {...register("imageUrl")} placeholder="https://placehold.co/40x40.png" className="col-span-3 bg-input border-border focus:border-accent focus:ring-accent" />
+                </div>
+                {errors.imageUrl && (
+                  <div className="grid grid-cols-4 gap-x-4">
+                    <p className="col-start-2 col-span-3 text-sm text-destructive mt-1">{errors.imageUrl.message}</p>
+                  </div>
+                )}
               </div>
-               {errors.imageUrl && <p className="col-span-4 text-sm text-destructive text-right -mt-2">{errors.imageUrl.message}</p>}
 
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="dataAiHint" className="text-right text-foreground/80">
-                  Hint AI Img.
-                </Label>
-                <Input id="dataAiHint" {...register("dataAiHint")} placeholder="es. rolex submariner" className="col-span-3 bg-input border-border focus:border-accent focus:ring-accent" />
+              <div>
+                <div className="grid grid-cols-4 items-center gap-x-4">
+                  <Label htmlFor="dataAiHint" className="text-right text-foreground/80 col-span-1">Hint AI Img.</Label>
+                  <Input id="dataAiHint" {...register("dataAiHint")} placeholder="es. rolex submariner" className="col-span-3 bg-input border-border focus:border-accent focus:ring-accent" />
+                </div>
+                {errors.dataAiHint && (
+                  <div className="grid grid-cols-4 gap-x-4">
+                    <p className="col-start-2 col-span-3 text-sm text-destructive mt-1">{errors.dataAiHint.message}</p>
+                  </div>
+                )}
               </div>
-              {errors.dataAiHint && <p className="col-span-4 text-sm text-destructive text-right -mt-2">{errors.dataAiHint.message}</p>}
               
-              <div className="grid grid-cols-4 items-start gap-4">
-                <Label htmlFor="description" className="text-right pt-2 text-foreground/80">
-                  Descrizione
-                </Label>
-                <Textarea id="description" {...register("description")} className="col-span-3 min-h-[100px] bg-input border-border focus:border-accent focus:ring-accent" />
+              <div>
+                <div className="grid grid-cols-4 items-start gap-x-4"> {/* items-start for textarea alignment */}
+                  <Label htmlFor="description" className="text-right text-foreground/80 col-span-1 pt-2">Descrizione</Label> {/* pt-2 to align with textarea text */}
+                  <Textarea id="description" {...register("description")} className="col-span-3 min-h-[100px] bg-input border-border focus:border-accent focus:ring-accent" />
+                </div>
+                {errors.description && (
+                  <div className="grid grid-cols-4 gap-x-4">
+                     <p className="col-start-2 col-span-3 text-sm text-destructive mt-1">{errors.description.message}</p>
+                  </div>
+                )}
               </div>
-              {errors.description && <p className="col-span-4 text-sm text-destructive text-right -mt-2">{errors.description.message}</p>}
               
-              <DialogFooter className="mt-4">
+              <DialogFooter className="mt-4 sm:mt-2"> {/* Adjusted margin for footer */}
                 <DialogClose asChild>
                    <Button type="button" variant="outline" onClick={() => { reset(); setIsDialogOpen(false); }}>Annulla</Button>
                 </DialogClose>
@@ -221,5 +250,4 @@ export default function AdminOrologiPage() {
     </div>
   );
 }
-
     
