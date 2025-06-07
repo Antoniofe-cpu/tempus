@@ -40,6 +40,7 @@ const initialMockWatches: WatchType[] = [
   { id: "WR001", name: "Rolex Submariner Date", brand: "Rolex", price: 13500, stock: 2, imageUrl: "https://placehold.co/40x40.png", dataAiHint: "Rolex Submariner", description: "Iconico orologio subacqueo, un classico intramontabile." },
   { id: "WO002", name: "Omega Speedmaster Pro", brand: "Omega", price: 7200, stock: 5, imageUrl: "https://placehold.co/40x40.png", dataAiHint: "Omega Speedmaster", description: "Il leggendario Moonwatch, ricco di storia." },
   { id: "WPP003", name: "Patek Philippe Nautilus", brand: "Patek Philippe", price: 150000, stock: 1, imageUrl: "https://placehold.co/40x40.png", dataAiHint: "Patek Nautilus", description: "Eleganza sportiva e design inconfondibile." },
+  { id: "WAP004", name: "Audemars Piguet Royal Oak", brand: "Audemars Piguet", price: 55000, stock: 2, imageUrl: "https://placehold.co/40x40.png", dataAiHint: "Audemars RoyalOak", description: "Design audace e finiture impeccabili per un orologio che non passa inosservato." },
 ];
 
 const WatchFormSchema = z.object({
