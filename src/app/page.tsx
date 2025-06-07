@@ -15,9 +15,10 @@ export default function HomePage() {
             <Image
               src="https://placehold.co/1920x1080.png"
               alt="Sfondo Orologi di Lusso"
-              layout="fill"
-              objectFit="cover"
+              fill
+              style={{ objectFit: 'cover' }}
               quality={80}
+              priority // Recommended for LCP images
               data-ai-hint="luxury watches collage"
             />
           </div>
