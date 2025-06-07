@@ -9,7 +9,7 @@ export default function AdminDashboardPage() {
   ];
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 w-full">
       <div className="flex justify-between items-center">
         <h1 className="font-headline text-4xl font-bold text-primary">Dashboard Amministrazione</h1>
       </div>

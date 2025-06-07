@@ -7,6 +7,25 @@ body {
 }
 
 @layer base {
+  /* * {
+    @apply border-border;
+  } */ /* Rimosso questa regola globale */
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Animation for settings icon */
+@keyframes spin-slow {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.animate-spin-slow {
+  animation: spin-slow 5s linear infinite;
+}
+
+@layer base {
   :root {
     --background: 0 0% 100%;
     --foreground: 200 14% 18%; /* Dark gray for light theme text */
@@ -90,14 +109,4 @@ body {
   body {
     @apply bg-background text-foreground;
   }
-}
-
-/* Animation for settings icon */
-@keyframes spin-slow {
-  to {
-    transform: rotate(360deg);
-  }
-}
-.animate-spin-slow {
-  animation: spin-slow 5s linear infinite;
 }
