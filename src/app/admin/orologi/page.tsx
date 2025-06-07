@@ -86,14 +86,14 @@ export default function AdminOrologiPage() {
               Aggiungi Nuovo Orologio
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-lg bg-card border-border/60 shadow-xl">
+          <DialogContent className="sm:max-w-lg bg-card border-border/60 shadow-xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
               <DialogT className="font-headline text-2xl text-primary">Aggiungi Nuovo Orologio</DialogT>
               <DialogDesc className="text-muted-foreground">
                 Inserisci i dettagli del nuovo orologio da aggiungere al catalogo.
               </DialogDesc>
             </DialogHeader>
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 py-4">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 py-4 px-1"> {/* Adjusted space and added padding for scrollbar */}
               <div>
                 <Label htmlFor="name" className="text-foreground/80">Nome Orologio</Label>
                 <Input id="name" {...register("name")} className="mt-1 bg-input border-border focus:border-accent focus:ring-accent" />
@@ -106,17 +106,16 @@ export default function AdminOrologiPage() {
                 {errors.brand && <p className="text-sm text-destructive mt-1">{errors.brand.message}</p>}
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="price" className="text-foreground/80">Prezzo (€)</Label>
-                  <Input id="price" type="number" {...register("price")} className="mt-1 bg-input border-border focus:border-accent focus:ring-accent" />
-                  {errors.price && <p className="text-sm text-destructive mt-1">{errors.price.message}</p>}
-                </div>
-                <div>
-                  <Label htmlFor="stock" className="text-foreground/80">Disponibilità</Label>
-                  <Input id="stock" type="number" {...register("stock")} className="mt-1 bg-input border-border focus:border-accent focus:ring-accent" />
-                  {errors.stock && <p className="text-sm text-destructive mt-1">{errors.stock.message}</p>}
-                </div>
+              <div>
+                <Label htmlFor="price" className="text-foreground/80">Prezzo (€)</Label>
+                <Input id="price" type="number" {...register("price")} className="mt-1 bg-input border-border focus:border-accent focus:ring-accent" />
+                {errors.price && <p className="text-sm text-destructive mt-1">{errors.price.message}</p>}
+              </div>
+              
+              <div>
+                <Label htmlFor="stock" className="text-foreground/80">Disponibilità</Label>
+                <Input id="stock" type="number" {...register("stock")} className="mt-1 bg-input border-border focus:border-accent focus:ring-accent" />
+                {errors.stock && <p className="text-sm text-destructive mt-1">{errors.stock.message}</p>}
               </div>
               
               <div>
@@ -137,7 +136,7 @@ export default function AdminOrologiPage() {
                 {errors.description && <p className="text-sm text-destructive mt-1">{errors.description.message}</p>}
               </div>
               
-              <DialogFooter className="mt-2">
+              <DialogFooter className="mt-2 pt-4 border-t border-border/40"> {/* Added border for separation */}
                 <DialogClose asChild>
                    <Button type="button" variant="outline" onClick={() => { reset(); setIsDialogOpen(false); }}>Annulla</Button>
                 </DialogClose>
