@@ -18,6 +18,7 @@ import {
   DialogHeader,
   DialogTitle as DialogT,
   DialogClose,
+  DialogTrigger, // Added DialogTrigger
 } from "@/components/ui/dialog";
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -138,18 +139,13 @@ export default function AdminOrologiPage() {
         condition: data.condition || '',
       };
 
-      // Rimuovi chiavi con stringhe vuote se non devono essere salvate come tali,
-      // o lasciale se lo schema Firestore le accetta/ignora.
-      // Per ora, le inviamo. Firestore dovrebbe ignorare i campi stringa vuoti se non sono nello schema con valori di default.
-      // La logica in watchService.ts per rimuovere `undefined` è comunque utile.
-
       if (editingWatch) {
         console.log('Tentativo di MODIFICA orologio con ID:', editingWatch.id, 'Payload:', watchPayload);
         await updateWatchService(editingWatch.id, watchPayload);
         toast({ title: "Successo", description: "Orologio modificato con successo." });
       } else {
         console.log('Tentativo di AGGIUNTA nuovo orologio. Payload:', watchPayload);
-        await addWatchService(watchPayload as Omit<WatchType, 'id'>); // Cast perché manca 'id'
+        await addWatchService(watchPayload as Omit<WatchType, 'id'>); 
         toast({ title: "Successo", description: "Orologio aggiunto con successo." });
       }
       await fetchAdminWatches(); 
