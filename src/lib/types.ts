@@ -1,15 +1,15 @@
 
 export interface Watch {
-  id: string;
+  id: string; // Generato automaticamente (es. da Firestore o UUID)
   name: string;
   brand: string;
   price: number;
-  stock: number; // Aggiunto per coerenza con i dati admin
-  imageUrl: string;
+  stock: number; 
+  imageUrl: string; // URL dell'immagine
   description: string;
-  rarity?: string; // e.g., "Limited Edition", "Rare Vintage"
-  condition?: string; // e.g., "New", "Mint", "Pre-owned"
-  dataAiHint?: string; // For placeholder image search
+  rarity?: string; // Es. "Limited Edition", "Rare Vintage"
+  condition?: string; // Es. "New", "Mint", "Pre-owned"
+  dataAiHint?: string; // Per la ricerca di immagini AI o placeholder
 }
 
 export type WatchType = 'Dress' | 'Sportivo' | 'Cronografo' | 'Subacqueo' | 'Vintage' | 'Altro';
@@ -18,10 +18,10 @@ export interface PersonalizedRequest {
   id?: string;
   name: string;
   email: string;
-  watchType: WatchType | string; // Allow 'Altro' to be custom string
+  watchType: WatchType | string; 
   desiredBrand?: string;
   desiredModel?: string;
-  budget?: number[]; // Range, e.g., [min, max]
+  budget?: number[]; // Range [min, max]
   aiCriteria?: string;
   additionalNotes?: string;
   status?: 'Nuova' | 'In Lavorazione' | 'Completata' | 'Cancellata';

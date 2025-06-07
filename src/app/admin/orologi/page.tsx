@@ -1,10 +1,10 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Search, Edit, Trash2 } from "lucide-react";
+import { PlusCircle, Search, Edit, Trash2, RotateCcw } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -24,7 +24,6 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import type { Watch as WatchType } from '@/lib/types';
-import { watchesData } from '@/lib/mock-data'; // Importa i dati centralizzati
 import {
   AlertDialog,
   AlertDialogAction,
@@ -36,6 +35,9 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { getWatches, addWatchService, updateWatchService, deleteWatchService, resetMockDataService } from '@/services/watchService';
+import { useToast } from "@/hooks/use-toast";
+
 
 const WatchFormSchema = z.object({
   name: z.string().min(2, { message: "Il nome deve contenere almeno 2 caratteri." }),
@@ -52,11 +54,13 @@ const WatchFormSchema = z.object({
 type WatchFormData = z.infer<typeof WatchFormSchema>;
 
 export default function AdminOrologiPage() {
-  const [watchesList, setWatchesList] = useState<WatchType[]>([...watchesData]); // Usa una copia per modifiche locali
+  const [watchesList, setWatchesList] = useState<WatchType[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingWatch, setEditingWatch] = useState<WatchType | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [watchToDelete, setWatchToDelete] = useState<WatchType | null>(null);
+  const { toast } = useToast();
 
   const { register, handleSubmit, reset, formState: { errors }, setValue } = useForm<WatchFormData>({
     resolver: zodResolver(WatchFormSchema),
@@ -73,10 +77,30 @@ export default function AdminOrologiPage() {
     }
   });
 
+  const fetchAdminWatches = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const watches = await getWatches();
+      setWatchesList(watches);
+    } catch (error) {
+      console.error("Errore nel caricamento degli orologi:", error);
+      toast({ title: "Errore", description: "Impossibile caricare gli orologi.", variant: "destructive" });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [toast]);
+
+  useEffect(() => {
+    fetchAdminWatches();
+  }, [fetchAdminWatches]);
+  
   useEffect(() => {
     if (isDialogOpen) {
       if (editingWatch) {
-        reset(editingWatch);
+        reset({
+          ...editingWatch,
+          imageUrl: editingWatch.imageUrl || 'https://placehold.co/600x400.png',
+        });
       } else {
         reset({ 
             name: '',
@@ -94,29 +118,35 @@ export default function AdminOrologiPage() {
   }, [isDialogOpen, editingWatch, reset]);
 
 
-  const onSubmit = (data: WatchFormData) => {
-    if (editingWatch) {
-      const updatedWatch: WatchType = {
-        ...editingWatch,
-        ...data,
-        price: Number(data.price),
-        stock: Number(data.stock),
-        imageUrl: data.imageUrl || editingWatch.imageUrl || `https://placehold.co/600x400.png`,
-        dataAiHint: data.dataAiHint || editingWatch.dataAiHint || data.name.split(" ").slice(0,2).join(" ").toLowerCase(),
-      };
-      setWatchesList(prev => prev.map(w => w.id === editingWatch.id ? updatedWatch : w));
-    } else {
-      const newWatch: WatchType = {
-        ...data,
-        id: `W${Date.now().toString().slice(-5)}`,
-        price: Number(data.price),
-        stock: Number(data.stock),
-        imageUrl: data.imageUrl || `https://placehold.co/600x400.png`,
-        dataAiHint: data.dataAiHint || data.name.split(" ").slice(0,2).join(" ").toLowerCase(),
-      };
-      setWatchesList(prev => [newWatch, ...prev]);
+  const onSubmit = async (data: WatchFormData) => {
+    try {
+      if (editingWatch) {
+        const watchUpdateData: Partial<Omit<WatchType, 'id'>> = {
+          ...data,
+          price: Number(data.price),
+          stock: Number(data.stock),
+          imageUrl: data.imageUrl || editingWatch.imageUrl || `https://placehold.co/600x400.png`,
+          dataAiHint: data.dataAiHint || editingWatch.dataAiHint || data.name.split(" ").slice(0,2).join(" ").toLowerCase(),
+        };
+        await updateWatchService(editingWatch.id, watchUpdateData);
+        toast({ title: "Successo", description: "Orologio modificato con successo." });
+      } else {
+        const newWatchData: Omit<WatchType, 'id'> = {
+          ...data,
+          price: Number(data.price),
+          stock: Number(data.stock),
+          imageUrl: data.imageUrl || `https://placehold.co/600x400.png`,
+          dataAiHint: data.dataAiHint || data.name.split(" ").slice(0,2).join(" ").toLowerCase(),
+        };
+        await addWatchService(newWatchData);
+        toast({ title: "Successo", description: "Orologio aggiunto con successo." });
+      }
+      await fetchAdminWatches(); // Re-fetch per aggiornare la lista
+      resetFormStates();
+    } catch (error) {
+      console.error("Errore nel salvataggio dell'orologio:", error);
+      toast({ title: "Errore", description: "Impossibile salvare l'orologio.", variant: "destructive" });
     }
-    resetFormStates();
   };
 
   const resetFormStates = () => {
@@ -150,12 +180,34 @@ export default function AdminOrologiPage() {
     setWatchToDelete(watch);
   };
 
-  const executeDelete = () => {
+  const executeDelete = async () => {
     if (watchToDelete) {
-      setWatchesList(prev => prev.filter(w => w.id !== watchToDelete.id));
-      setWatchToDelete(null);
+      try {
+        await deleteWatchService(watchToDelete.id);
+        toast({ title: "Successo", description: `Orologio "${watchToDelete.name}" eliminato.` });
+        await fetchAdminWatches(); // Re-fetch
+        setWatchToDelete(null);
+      } catch (error) {
+        console.error("Errore nell'eliminazione dell'orologio:", error);
+        toast({ title: "Errore", description: "Impossibile eliminare l'orologio.", variant: "destructive" });
+      }
     }
   };
+  
+  const handleResetMockData = async () => {
+    setIsLoading(true);
+    try {
+      await resetMockDataService();
+      await fetchAdminWatches();
+      toast({ title: "Dati resettati", description: "I dati degli orologi sono stati resettati allo stato iniziale." });
+    } catch (error) {
+      console.error("Errore nel resettare i dati mock:", error);
+      toast({ title: "Errore", description: "Impossibile resettare i dati.", variant: "destructive" });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
 
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(event.target.value);
@@ -173,88 +225,94 @@ export default function AdminOrologiPage() {
           <h1 className="font-headline text-4xl font-bold text-primary">Gestione Orologi</h1>
           <p className="text-muted-foreground mt-1">Aggiungi, modifica o rimuovi orologi dal catalogo Occasioni.</p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={(open) => {
-          setIsDialogOpen(open);
-          if (!open) { 
-            setEditingWatch(null);
-            reset();
-          }
-        }}>
-          <DialogTrigger asChild>
-            <Button onClick={handleAddNewClick} className="bg-primary hover:bg-primary/90 text-primary-foreground">
-              <PlusCircle className="mr-2 h-5 w-5" />
-              Aggiungi Nuovo Orologio
+        <div className="flex gap-2">
+            <Button onClick={handleResetMockData} variant="outline" className="border-destructive text-destructive hover:bg-destructive/10">
+              <RotateCcw className="mr-2 h-5 w-5" />
+              Resetta Dati Mock
             </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-lg bg-card border-border/60 shadow-xl max-h-[80vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogT className="font-headline text-2xl text-primary text-left">{editingWatch ? "Modifica Orologio" : "Aggiungi Nuovo Orologio"}</DialogT>
-              <DialogDesc className="text-muted-foreground text-left">
-                {editingWatch ? "Modifica i dettagli dell'orologio esistente." : "Inserisci i dettagli del nuovo orologio da aggiungere al catalogo."}
-              </DialogDesc>
-            </DialogHeader>
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 py-4 px-0">
-              <div>
-                <Label htmlFor="name" className="text-foreground/80 block mb-1.5">Nome Orologio</Label>
-                <Input id="name" {...register("name")} className="bg-input border-border focus:border-accent focus:ring-accent" />
-                {errors.name && <p className="text-sm text-destructive mt-1">{errors.name.message}</p>}
-              </div>
-              
-              <div>
-                <Label htmlFor="brand" className="text-foreground/80 block mb-1.5">Marca</Label>
-                <Input id="brand" {...register("brand")} className="bg-input border-border focus:border-accent focus:ring-accent" />
-                {errors.brand && <p className="text-sm text-destructive mt-1">{errors.brand.message}</p>}
-              </div>
+            <Dialog open={isDialogOpen} onOpenChange={(open) => {
+              setIsDialogOpen(open);
+              if (!open) { 
+                setEditingWatch(null);
+                reset();
+              }
+            }}>
+              <DialogTrigger asChild>
+                <Button onClick={handleAddNewClick} className="bg-primary hover:bg-primary/90 text-primary-foreground">
+                  <PlusCircle className="mr-2 h-5 w-5" />
+                  Aggiungi Orologio
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-lg bg-card border-border/60 shadow-xl max-h-[80vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogT className="font-headline text-2xl text-primary text-left">{editingWatch ? "Modifica Orologio" : "Aggiungi Nuovo Orologio"}</DialogT>
+                  <DialogDesc className="text-muted-foreground text-left">
+                    {editingWatch ? "Modifica i dettagli dell'orologio esistente." : "Inserisci i dettagli del nuovo orologio da aggiungere al catalogo."}
+                  </DialogDesc>
+                </DialogHeader>
+                <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 py-4 px-0">
+                  <div>
+                    <Label htmlFor="name" className="text-foreground/80 block mb-1.5">Nome Orologio</Label>
+                    <Input id="name" {...register("name")} className="bg-input border-border focus:border-accent focus:ring-accent" />
+                    {errors.name && <p className="text-sm text-destructive mt-1">{errors.name.message}</p>}
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="brand" className="text-foreground/80 block mb-1.5">Marca</Label>
+                    <Input id="brand" {...register("brand")} className="bg-input border-border focus:border-accent focus:ring-accent" />
+                    {errors.brand && <p className="text-sm text-destructive mt-1">{errors.brand.message}</p>}
+                  </div>
 
-              <div>
-                <Label htmlFor="price" className="text-foreground/80 block mb-1.5">Prezzo (€)</Label>
-                <Input id="price" type="number" {...register("price")} className="bg-input border-border focus:border-accent focus:ring-accent" />
-                {errors.price && <p className="text-sm text-destructive mt-1">{errors.price.message}</p>}
-              </div>
-              
-              <div>
-                <Label htmlFor="stock" className="text-foreground/80 block mb-1.5">Disponibilità</Label>
-                <Input id="stock" type="number" {...register("stock")} className="bg-input border-border focus:border-accent focus:ring-accent" />
-                {errors.stock && <p className="text-sm text-destructive mt-1">{errors.stock.message}</p>}
-              </div>
-              
-              <div>
-                <Label htmlFor="imageUrl" className="text-foreground/80 block mb-1.5">URL Immagine</Label>
-                <Input id="imageUrl" {...register("imageUrl")} placeholder="https://placehold.co/600x400.png" className="bg-input border-border focus:border-accent focus:ring-accent" />
-                {errors.imageUrl && <p className="text-sm text-destructive mt-1">{errors.imageUrl.message}</p>}
-              </div>
+                  <div>
+                    <Label htmlFor="price" className="text-foreground/80 block mb-1.5">Prezzo (€)</Label>
+                    <Input id="price" type="number" {...register("price")} className="bg-input border-border focus:border-accent focus:ring-accent" />
+                    {errors.price && <p className="text-sm text-destructive mt-1">{errors.price.message}</p>}
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="stock" className="text-foreground/80 block mb-1.5">Disponibilità</Label>
+                    <Input id="stock" type="number" {...register("stock")} className="bg-input border-border focus:border-accent focus:ring-accent" />
+                    {errors.stock && <p className="text-sm text-destructive mt-1">{errors.stock.message}</p>}
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="imageUrl" className="text-foreground/80 block mb-1.5">URL Immagine</Label>
+                    <Input id="imageUrl" {...register("imageUrl")} placeholder="https://placehold.co/600x400.png" className="bg-input border-border focus:border-accent focus:ring-accent" />
+                    {errors.imageUrl && <p className="text-sm text-destructive mt-1">{errors.imageUrl.message}</p>}
+                  </div>
 
-              <div>
-                <Label htmlFor="dataAiHint" className="text-foreground/80 block mb-1.5">Hint AI per Immagine (max 2 parole)</Label>
-                <Input id="dataAiHint" {...register("dataAiHint")} placeholder="es. rolex submariner" className="bg-input border-border focus:border-accent focus:ring-accent" />
-                {errors.dataAiHint && <p className="text-sm text-destructive mt-1">{errors.dataAiHint.message}</p>}
-              </div>
+                  <div>
+                    <Label htmlFor="dataAiHint" className="text-foreground/80 block mb-1.5">Hint AI per Immagine (max 2 parole)</Label>
+                    <Input id="dataAiHint" {...register("dataAiHint")} placeholder="es. rolex submariner" className="bg-input border-border focus:border-accent focus:ring-accent" />
+                    {errors.dataAiHint && <p className="text-sm text-destructive mt-1">{errors.dataAiHint.message}</p>}
+                  </div>
 
-              <div>
-                <Label htmlFor="rarity" className="text-foreground/80 block mb-1.5">Rarità (Opzionale)</Label>
-                <Input id="rarity" {...register("rarity")} placeholder="Es. Limited Edition" className="bg-input border-border focus:border-accent focus:ring-accent" />
-              </div>
+                  <div>
+                    <Label htmlFor="rarity" className="text-foreground/80 block mb-1.5">Rarità (Opzionale)</Label>
+                    <Input id="rarity" {...register("rarity")} placeholder="Es. Limited Edition" className="bg-input border-border focus:border-accent focus:ring-accent" />
+                  </div>
 
-              <div>
-                <Label htmlFor="condition" className="text-foreground/80 block mb-1.5">Condizione (Opzionale)</Label>
-                <Input id="condition" {...register("condition")} placeholder="Es. Nuovo, Mint" className="bg-input border-border focus:border-accent focus:ring-accent" />
-              </div>
-              
-              <div>
-                <Label htmlFor="description" className="text-foreground/80 block mb-1.5">Descrizione</Label>
-                <Textarea id="description" {...register("description")} className="min-h-[100px] bg-input border-border focus:border-accent focus:ring-accent" />
-                {errors.description && <p className="text-sm text-destructive mt-1">{errors.description.message}</p>}
-              </div>
-              
-              <DialogFooter className="mt-2 pt-4 border-t border-border/40">
-                <DialogClose asChild>
-                   <Button type="button" variant="outline" onClick={resetFormStates}>Annulla</Button>
-                </DialogClose>
-                <Button type="submit" className="bg-primary hover:bg-primary/90 text-primary-foreground">{editingWatch ? "Salva Modifiche" : "Salva Orologio"}</Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
+                  <div>
+                    <Label htmlFor="condition" className="text-foreground/80 block mb-1.5">Condizione (Opzionale)</Label>
+                    <Input id="condition" {...register("condition")} placeholder="Es. Nuovo, Mint" className="bg-input border-border focus:border-accent focus:ring-accent" />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="description" className="text-foreground/80 block mb-1.5">Descrizione</Label>
+                    <Textarea id="description" {...register("description")} className="min-h-[100px] bg-input border-border focus:border-accent focus:ring-accent" />
+                    {errors.description && <p className="text-sm text-destructive mt-1">{errors.description.message}</p>}
+                  </div>
+                  
+                  <DialogFooter className="mt-2 pt-4 border-t border-border/40">
+                    <DialogClose asChild>
+                       <Button type="button" variant="outline" onClick={resetFormStates}>Annulla</Button>
+                    </DialogClose>
+                    <Button type="submit" className="bg-primary hover:bg-primary/90 text-primary-foreground">{editingWatch ? "Salva Modifiche" : "Salva Orologio"}</Button>
+                  </DialogFooter>
+                </form>
+              </DialogContent>
+            </Dialog>
+        </div>
       </div>
 
       <Card className="bg-card shadow-lg">
@@ -273,6 +331,11 @@ export default function AdminOrologiPage() {
           </div>
         </CardHeader>
         <CardContent>
+          {isLoading ? (
+             <div className="flex justify-center items-center h-64">
+              <Loader2 className="h-12 w-12 text-accent animate-spin" />
+            </div>
+          ) : (
           <Table>
             <TableHeader>
               <TableRow>
@@ -288,7 +351,18 @@ export default function AdminOrologiPage() {
               {filteredWatches.length > 0 ? filteredWatches.map((watch) => (
                 <TableRow key={watch.id}>
                   <TableCell>
-                    <Image src={watch.imageUrl} alt={watch.name} width={40} height={40} className="rounded-md" data-ai-hint={watch.dataAiHint || watch.name.split(" ").slice(0,2).join(" ").toLowerCase()} />
+                    <Image 
+                        src={watch.imageUrl || 'https://placehold.co/40x40.png'} 
+                        alt={watch.name} 
+                        width={40} 
+                        height={40} 
+                        className="rounded-md object-cover" 
+                        data-ai-hint={watch.dataAiHint || watch.name.split(" ").slice(0,2).join(" ").toLowerCase()}
+                        onError={(e) => {
+                          e.currentTarget.src = 'https://placehold.co/40x40.png'; // Fallback in caso di errore caricamento
+                          e.currentTarget.srcset = '';
+                        }}
+                    />
                   </TableCell>
                   <TableCell className="font-medium">{watch.name}</TableCell>
                   <TableCell>{watch.brand}</TableCell>
@@ -330,10 +404,13 @@ export default function AdminOrologiPage() {
               )}
             </TableBody>
           </Table>
+          )}
         </CardContent>
       </Card>
       <p className="text-center text-sm text-muted-foreground">
-        Le funzionalità di aggiunta, modifica, eliminazione e ricerca (per nome/marca) sono ora implementate. Le modifiche sono temporanee e non persistono dopo il ricaricamento della pagina.
+        Le funzionalità di aggiunta, modifica, eliminazione e ricerca (per nome/marca) sono ora implementate.
+        Le modifiche sono persistenti per la sessione corrente del browser. Per salvare i dati in modo permanente, è necessario configurare un database (es. Firestore).
+        Il pulsante "Resetta Dati Mock" ripristina i dati allo stato originale definito nel codice.
       </p>
     </div>
   );
