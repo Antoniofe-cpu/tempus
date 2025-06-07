@@ -4,7 +4,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Search, Edit, Trash2, Loader2 } from "lucide-react"; // Rimossa RotateCcw
+import { PlusCircle, Search, Edit, Trash2, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -80,7 +80,10 @@ export default function AdminOrologiPage() {
   const fetchAdminWatches = useCallback(async () => {
     setIsLoading(true);
     try {
-      // await populateFirestoreWithMockDataIfNeeded(); // Chiamata per popolare se necessario
+      // Tenta di popolare Firestore con i dati mock se la collezione è vuota.
+      // Questa operazione è sicura perché `populateFirestoreWithMockDataIfNeeded`
+      // controlla internamente se la collezione è già popolata.
+      await populateFirestoreWithMockDataIfNeeded();
       const watches = await getWatches();
       setWatchesList(watches);
     } catch (error) {
@@ -195,10 +198,6 @@ export default function AdminOrologiPage() {
     }
   };
   
-  // Rimuoviamo la funzione handleResetMockData e il relativo pulsante
-  // Se si vuole popolare Firestore con dati mock, si può usare la funzione populateFirestoreWithMockDataIfNeeded()
-  // chiamata una volta o tramite un meccanismo separato.
-
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(event.target.value);
   };
@@ -216,7 +215,6 @@ export default function AdminOrologiPage() {
           <p className="text-muted-foreground mt-1">Aggiungi, modifica o rimuovi orologi dal catalogo Occasioni (dati su Firestore).</p>
         </div>
         <div className="flex gap-2">
-            {/* Pulsante Resetta Dati Mock rimosso */}
             <Dialog open={isDialogOpen} onOpenChange={(open) => {
               setIsDialogOpen(open);
               if (!open) { 
@@ -397,7 +395,7 @@ export default function AdminOrologiPage() {
       </Card>
       <p className="text-center text-sm text-muted-foreground">
         I dati degli orologi sono ora gestiti tramite Firestore. Assicurati di aver configurato correttamente `src/lib/firebase.ts` e le regole di sicurezza di Firestore.
-        Puoi chiamare `populateFirestoreWithMockDataIfNeeded()` in `useEffect` (o tramite un pulsante dedicato) per popolare il database con i dati iniziali se è vuoto.
+        La funzione `populateFirestoreWithMockDataIfNeeded()` viene chiamata all'avvio per popolare il database con dati di esempio, se vuoto.
       </p>
     </div>
   );
