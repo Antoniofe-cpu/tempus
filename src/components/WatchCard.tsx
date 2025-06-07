@@ -10,6 +10,7 @@ interface WatchCardProps {
 }
 
 export default function WatchCard({ watch }: WatchCardProps) {
+  const fallbackAiHint = watch.name.split(" ").slice(0, 2).join(" ").toLowerCase();
   return (
     <Card className="overflow-hidden flex flex-col h-full bg-card shadow-lg hover:shadow-accent/20 transition-all duration-300 ease-in-out transform hover:-translate-y-1">
       <CardHeader className="p-0 relative">
@@ -19,7 +20,7 @@ export default function WatchCard({ watch }: WatchCardProps) {
           width={600}
           height={400}
           className="object-cover w-full h-64"
-          data-ai-hint={watch.dataAiHint || "luxury watch"}
+          data-ai-hint={watch.dataAiHint || fallbackAiHint}
         />
         {watch.rarity && (
           <Badge variant="destructive" className="absolute top-3 right-3 bg-accent text-accent-foreground">
