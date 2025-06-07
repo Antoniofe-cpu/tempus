@@ -9,8 +9,9 @@ import { Button } from '@/components/ui/button';
 import { FilterIcon, ArrowDownUpIcon, Loader2 } from 'lucide-react';
 import AiSuggestions from '@/components/AiSuggestions'; 
 import type { Watch } from '@/lib/types';
-import { getWatches, populateFirestoreWithMockDataIfNeeded } from '@/services/watchService'; // Ora usa il service
+import { getWatches } from '@/services/watchService'; // Ora usa il service
 import { useToast } from "@/hooks/use-toast";
+import Link from 'next/link';
 
 
 export default function OccasioniPage() {
@@ -21,7 +22,9 @@ export default function OccasioniPage() {
   const fetchOccasioniWatches = useCallback(async () => {
     setIsLoading(true);
     try {
-      // await populateFirestoreWithMockDataIfNeeded(); // Chiamata per popolare se necessario la prima volta
+      // La logica di popolamento è ora principalmente gestita dalla pagina admin/orologi.
+      // Se necessario, la si può richiamare anche qui o centralizzare.
+      // await populateFirestoreWithMockDataIfNeeded(); 
       const data = await getWatches(); // Prende i dati da Firestore tramite il service
       setWatches(data);
     } catch (error) {
@@ -80,7 +83,10 @@ export default function OccasioniPage() {
         ) : (
           <div className="text-center py-16 text-muted-foreground">
             <p className="text-xl mb-2">Nessun orologio disponibile al momento su Firestore.</p>
-            <p>Aggiungi orologi tramite la sezione admin o popola il database.</p>
+            <p>
+              Visita la sezione <Link href="/admin/orologi" className="font-semibold text-accent hover:underline">Gestione Orologi</Link> per aggiungere nuovi pezzi
+              o per popolare il catalogo con dati di esempio se è la prima volta.
+            </p>
           </div>
         )}
         
