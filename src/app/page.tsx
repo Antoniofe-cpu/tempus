@@ -13,13 +13,13 @@ export default function HomePage() {
         <section className="relative py-20 md:py-32 text-center overflow-hidden">
           <div className="absolute inset-0 opacity-10">
             <Image
-              src="https://placehold.co/1920x1080.png"
-              alt="Sfondo Orologi di Lusso"
+              src="/hero-watch-mechanism.jpg"
+              alt="Dettaglio meccanismo orologio di lusso"
               fill
               style={{ objectFit: 'cover' }}
               quality={80}
-              priority // Recommended for LCP images
-              data-ai-hint="luxury watches collage"
+              priority
+              data-ai-hint="watch movement"
             />
           </div>
           <div className="container relative z-10 mx-auto px-4">
