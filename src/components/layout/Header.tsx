@@ -8,7 +8,7 @@ const navItems = [
   { href: '/', label: 'Home', icon: <WatchIcon className="h-5 w-5" /> },
   { href: '/occasioni', label: 'Occasioni', icon: <Search className="h-5 w-5" /> },
   { href: '/richiesta-personalizzata', label: 'Richiesta', icon: <Briefcase className="h-5 w-5" /> },
-  { href: '/admin', label: 'Admin', icon: <UserCircle className="h-5 w-5" /> },
+  // { href: '/admin', label: 'Admin', icon: <UserCircle className="h-5 w-5" /> }, // Rimosso link Admin
 ];
 
 export default function Header() {

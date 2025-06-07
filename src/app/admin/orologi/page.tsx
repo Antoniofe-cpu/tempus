@@ -13,17 +13,17 @@ import Image from "next/image";
 import {
   Dialog,
   DialogContent,
-  DialogDescription as DialogDesc, // Renamed to avoid conflict with CardDescription
+  DialogDescription as DialogDesc,
   DialogFooter,
   DialogHeader,
-  DialogTitle as DialogT, // Renamed to avoid conflict with CardTitle
+  DialogTitle as DialogT,
   DialogTrigger,
   DialogClose,
 } from "@/components/ui/dialog";
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import type { Watch as WatchType } from '@/lib/types'; // Import Watch type
+import type { Watch as WatchType } from '@/lib/types';
 
 const initialMockWatches: WatchType[] = [
   { id: "WR001", name: "Rolex Submariner Date", brand: "Rolex", price: 13500, stock: 2, imageUrl: "https://placehold.co/40x40.png", dataAiHint: "Rolex Submariner", description: "Iconico orologio subacqueo, un classico intramontabile." },
@@ -86,107 +86,58 @@ export default function AdminOrologiPage() {
               Aggiungi Nuovo Orologio
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[600px] bg-card border-border/60 shadow-xl">
+          <DialogContent className="sm:max-w-lg bg-card border-border/60 shadow-xl">
             <DialogHeader>
               <DialogT className="font-headline text-2xl text-primary">Aggiungi Nuovo Orologio</DialogT>
               <DialogDesc className="text-muted-foreground">
                 Inserisci i dettagli del nuovo orologio da aggiungere al catalogo.
               </DialogDesc>
             </DialogHeader>
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 py-4">
-              
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 py-4">
               <div>
-                <div className="grid grid-cols-4 items-center gap-x-4">
-                  <Label htmlFor="name" className="text-right text-foreground/80 col-span-1">Nome</Label>
-                  <Input id="name" {...register("name")} className="col-span-3 bg-input border-border focus:border-accent focus:ring-accent" />
-                </div>
-                {errors.name && (
-                  <div className="grid grid-cols-4 gap-x-4 mt-1">
-                    <div className="col-span-1" /> {/* Spacer */}
-                    <p className="col-span-3 text-sm text-destructive">{errors.name.message}</p>
-                  </div>
-                )}
+                <Label htmlFor="name" className="text-foreground/80">Nome Orologio</Label>
+                <Input id="name" {...register("name")} className="mt-1 bg-input border-border focus:border-accent focus:ring-accent" />
+                {errors.name && <p className="text-sm text-destructive mt-1">{errors.name.message}</p>}
               </div>
               
               <div>
-                <div className="grid grid-cols-4 items-center gap-x-4">
-                  <Label htmlFor="brand" className="text-right text-foreground/80 col-span-1">Marca</Label>
-                  <Input id="brand" {...register("brand")} className="col-span-3 bg-input border-border focus:border-accent focus:ring-accent" />
+                <Label htmlFor="brand" className="text-foreground/80">Marca</Label>
+                <Input id="brand" {...register("brand")} className="mt-1 bg-input border-border focus:border-accent focus:ring-accent" />
+                {errors.brand && <p className="text-sm text-destructive mt-1">{errors.brand.message}</p>}
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="price" className="text-foreground/80">Prezzo (€)</Label>
+                  <Input id="price" type="number" {...register("price")} className="mt-1 bg-input border-border focus:border-accent focus:ring-accent" />
+                  {errors.price && <p className="text-sm text-destructive mt-1">{errors.price.message}</p>}
                 </div>
-                {errors.brand && (
-                  <div className="grid grid-cols-4 gap-x-4 mt-1">
-                     <div className="col-span-1" /> {/* Spacer */}
-                    <p className="col-span-3 text-sm text-destructive">{errors.brand.message}</p>
-                  </div>
-                )}
+                <div>
+                  <Label htmlFor="stock" className="text-foreground/80">Disponibilità</Label>
+                  <Input id="stock" type="number" {...register("stock")} className="mt-1 bg-input border-border focus:border-accent focus:ring-accent" />
+                  {errors.stock && <p className="text-sm text-destructive mt-1">{errors.stock.message}</p>}
+                </div>
+              </div>
+              
+              <div>
+                <Label htmlFor="imageUrl" className="text-foreground/80">URL Immagine</Label>
+                <Input id="imageUrl" {...register("imageUrl")} placeholder="https://placehold.co/600x400.png" className="mt-1 bg-input border-border focus:border-accent focus:ring-accent" />
+                {errors.imageUrl && <p className="text-sm text-destructive mt-1">{errors.imageUrl.message}</p>}
               </div>
 
               <div>
-                <div className="grid grid-cols-4 items-center gap-x-4">
-                  <Label htmlFor="price" className="text-right text-foreground/80 col-span-1">Prezzo (€)</Label>
-                  <Input id="price" type="number" {...register("price")} className="col-span-3 bg-input border-border focus:border-accent focus:ring-accent" />
-                </div>
-                {errors.price && (
-                  <div className="grid grid-cols-4 gap-x-4 mt-1">
-                     <div className="col-span-1" /> {/* Spacer */}
-                    <p className="col-span-3 text-sm text-destructive">{errors.price.message}</p>
-                  </div>
-                )}
-              </div>
-
-              <div>
-                <div className="grid grid-cols-4 items-center gap-x-4">
-                  <Label htmlFor="stock" className="text-right text-foreground/80 col-span-1">Disponibilità</Label>
-                  <Input id="stock" type="number" {...register("stock")} className="col-span-3 bg-input border-border focus:border-accent focus:ring-accent" />
-                </div>
-                {errors.stock && (
-                  <div className="grid grid-cols-4 gap-x-4 mt-1">
-                     <div className="col-span-1" /> {/* Spacer */}
-                    <p className="col-span-3 text-sm text-destructive">{errors.stock.message}</p>
-                  </div>
-                )}
+                <Label htmlFor="dataAiHint" className="text-foreground/80">Hint AI per Immagine (max 2 parole)</Label>
+                <Input id="dataAiHint" {...register("dataAiHint")} placeholder="es. rolex submariner" className="mt-1 bg-input border-border focus:border-accent focus:ring-accent" />
+                {errors.dataAiHint && <p className="text-sm text-destructive mt-1">{errors.dataAiHint.message}</p>}
               </div>
               
               <div>
-                <div className="grid grid-cols-4 items-center gap-x-4">
-                  <Label htmlFor="imageUrl" className="text-right text-foreground/80 col-span-1">URL Immagine</Label>
-                  <Input id="imageUrl" {...register("imageUrl")} placeholder="https://placehold.co/40x40.png" className="col-span-3 bg-input border-border focus:border-accent focus:ring-accent" />
-                </div>
-                {errors.imageUrl && (
-                  <div className="grid grid-cols-4 gap-x-4 mt-1">
-                    <div className="col-span-1" /> {/* Spacer */}
-                    <p className="col-span-3 text-sm text-destructive">{errors.imageUrl.message}</p>
-                  </div>
-                )}
-              </div>
-
-              <div>
-                <div className="grid grid-cols-4 items-center gap-x-4">
-                  <Label htmlFor="dataAiHint" className="text-right text-foreground/80 col-span-1">Hint AI Img.</Label>
-                  <Input id="dataAiHint" {...register("dataAiHint")} placeholder="es. rolex submariner" className="col-span-3 bg-input border-border focus:border-accent focus:ring-accent" />
-                </div>
-                {errors.dataAiHint && (
-                  <div className="grid grid-cols-4 gap-x-4 mt-1">
-                    <div className="col-span-1" /> {/* Spacer */}
-                    <p className="col-span-3 text-sm text-destructive">{errors.dataAiHint.message}</p>
-                  </div>
-                )}
+                <Label htmlFor="description" className="text-foreground/80">Descrizione</Label>
+                <Textarea id="description" {...register("description")} className="mt-1 min-h-[100px] bg-input border-border focus:border-accent focus:ring-accent" />
+                {errors.description && <p className="text-sm text-destructive mt-1">{errors.description.message}</p>}
               </div>
               
-              <div>
-                <div className="grid grid-cols-4 items-start gap-x-4">
-                  <Label htmlFor="description" className="text-right text-foreground/80 col-span-1 pt-2">Descrizione</Label>
-                  <Textarea id="description" {...register("description")} className="col-span-3 min-h-[100px] bg-input border-border focus:border-accent focus:ring-accent" />
-                </div>
-                {errors.description && (
-                  <div className="grid grid-cols-4 gap-x-4 mt-1">
-                    <div className="col-span-1" /> {/* Spacer */}
-                    <p className="col-span-3 text-sm text-destructive">{errors.description.message}</p>
-                  </div>
-                )}
-              </div>
-              
-              <DialogFooter className="mt-4 sm:mt-2">
+              <DialogFooter className="mt-2">
                 <DialogClose asChild>
                    <Button type="button" variant="outline" onClick={() => { reset(); setIsDialogOpen(false); }}>Annulla</Button>
                 </DialogClose>
