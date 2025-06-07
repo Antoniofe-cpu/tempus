@@ -10,8 +10,7 @@ const firebaseConfig = {
   projectId: "tempus-concierge", // Assicurati che questo sia il Project ID corretto!
   storageBucket: "tempus-concierge.firebasestorage.app",
   messagingSenderId: "544608215639",
-  appId: ":544608215639:web:099bf420d083fa9f64f912",
-measurementId: "G-3PBXV9TVJG"
+  appId: "1:544608215639:web:099bf420d083fa9f64f912",
   // measurementId: "TUO_MEASUREMENT_ID" // Opzionale, se usi Google Analytics
 };
 
