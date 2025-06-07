@@ -4,7 +4,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Search, Edit, Trash2, RotateCcw } from "lucide-react";
+import { PlusCircle, Search, Edit, Trash2, RotateCcw, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -415,3 +415,4 @@ export default function AdminOrologiPage() {
     </div>
   );
 }
+
