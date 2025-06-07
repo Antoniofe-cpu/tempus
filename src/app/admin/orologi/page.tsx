@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, Search, Edit, Trash2 } from "lucide-react";
@@ -24,6 +24,17 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import type { Watch as WatchType } from '@/lib/types';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 const initialMockWatches: WatchType[] = [
   { id: "WR001", name: "Rolex Submariner Date", brand: "Rolex", price: 13500, stock: 2, imageUrl: "https://placehold.co/40x40.png", dataAiHint: "Rolex Submariner", description: "Iconico orologio subacqueo, un classico intramontabile." },
@@ -46,8 +57,11 @@ type WatchFormData = z.infer<typeof WatchFormSchema>;
 export default function AdminOrologiPage() {
   const [watchesList, setWatchesList] = useState<WatchType[]>(initialMockWatches);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingWatch, setEditingWatch] = useState<WatchType | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [watchToDelete, setWatchToDelete] = useState<WatchType | null>(null);
 
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<WatchFormData>({
+  const { register, handleSubmit, reset, formState: { errors }, setValue } = useForm<WatchFormData>({
     resolver: zodResolver(WatchFormSchema),
     defaultValues: {
       name: '',
@@ -60,17 +74,89 @@ export default function AdminOrologiPage() {
     }
   });
 
+  useEffect(() => {
+    if (isDialogOpen) {
+      if (editingWatch) {
+        reset(editingWatch);
+      } else {
+        reset({ // Reset to default empty values for new watch
+            name: '',
+            brand: '',
+            price: 0,
+            stock: 0,
+            imageUrl: '',
+            description: '',
+            dataAiHint: '',
+        });
+      }
+    }
+  }, [isDialogOpen, editingWatch, reset]);
+
+
   const onSubmit = (data: WatchFormData) => {
-    const newWatch: WatchType = {
-      ...data,
-      id: `W${Date.now().toString().slice(-5)}`,
-      imageUrl: data.imageUrl || `https://placehold.co/40x40.png`,
-      dataAiHint: data.dataAiHint || data.name.split(" ").slice(0,2).join(" ").toLowerCase(),
-    };
-    setWatchesList(prev => [newWatch, ...prev]);
-    reset();
-    setIsDialogOpen(false);
+    if (editingWatch) {
+      // Edit existing watch
+      const updatedWatch: WatchType = {
+        ...editingWatch,
+        ...data,
+        price: Number(data.price),
+        stock: Number(data.stock),
+        imageUrl: data.imageUrl || editingWatch.imageUrl || `https://placehold.co/40x40.png`,
+        dataAiHint: data.dataAiHint || editingWatch.dataAiHint || data.name.split(" ").slice(0,2).join(" ").toLowerCase(),
+      };
+      setWatchesList(prev => prev.map(w => w.id === editingWatch.id ? updatedWatch : w));
+    } else {
+      // Add new watch
+      const newWatch: WatchType = {
+        ...data,
+        id: `W${Date.now().toString().slice(-5)}`,
+        price: Number(data.price),
+        stock: Number(data.stock),
+        imageUrl: data.imageUrl || `https://placehold.co/40x40.png`,
+        dataAiHint: data.dataAiHint || data.name.split(" ").slice(0,2).join(" ").toLowerCase(),
+      };
+      setWatchesList(prev => [newWatch, ...prev]);
+    }
+    resetFormStates();
   };
+
+  const resetFormStates = () => {
+    reset();
+    setEditingWatch(null);
+    setIsDialogOpen(false);
+  }
+
+  const handleAddNewClick = () => {
+    setEditingWatch(null);
+    reset(); // Clear form for new entry
+    setIsDialogOpen(true);
+  };
+
+  const handleEditClick = (watch: WatchType) => {
+    setEditingWatch(watch);
+    // useEffect will handle resetting the form with watch data when dialog opens
+    setIsDialogOpen(true);
+  };
+
+  const handleDeleteConfirmation = (watch: WatchType) => {
+    setWatchToDelete(watch);
+  };
+
+  const executeDelete = () => {
+    if (watchToDelete) {
+      setWatchesList(prev => prev.filter(w => w.id !== watchToDelete.id));
+      setWatchToDelete(null);
+    }
+  };
+
+  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(event.target.value);
+  };
+
+  const filteredWatches = watchesList.filter(watch =>
+    watch.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    watch.brand.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <div className="space-y-8 w-full">
@@ -79,18 +165,24 @@ export default function AdminOrologiPage() {
           <h1 className="font-headline text-4xl font-bold text-primary">Gestione Orologi</h1>
           <p className="text-muted-foreground mt-1">Aggiungi, modifica o rimuovi orologi dal catalogo Occasioni.</p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <Dialog open={isDialogOpen} onOpenChange={(open) => {
+          setIsDialogOpen(open);
+          if (!open) { // If dialog is closing
+            setEditingWatch(null);
+            reset();
+          }
+        }}>
           <DialogTrigger asChild>
-            <Button className="bg-primary hover:bg-primary/90 text-primary-foreground">
+            <Button onClick={handleAddNewClick} className="bg-primary hover:bg-primary/90 text-primary-foreground">
               <PlusCircle className="mr-2 h-5 w-5" />
               Aggiungi Nuovo Orologio
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-lg bg-card border-border/60 shadow-xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
-              <DialogT className="font-headline text-2xl text-primary text-left">Aggiungi Nuovo Orologio</DialogT>
+              <DialogT className="font-headline text-2xl text-primary text-left">{editingWatch ? "Modifica Orologio" : "Aggiungi Nuovo Orologio"}</DialogT>
               <DialogDesc className="text-muted-foreground text-left">
-                Inserisci i dettagli del nuovo orologio da aggiungere al catalogo.
+                {editingWatch ? "Modifica i dettagli dell'orologio esistente." : "Inserisci i dettagli del nuovo orologio da aggiungere al catalogo."}
               </DialogDesc>
             </DialogHeader>
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 py-4 px-0">
@@ -138,9 +230,9 @@ export default function AdminOrologiPage() {
               
               <DialogFooter className="mt-2 pt-4 border-t border-border/40">
                 <DialogClose asChild>
-                   <Button type="button" variant="outline" onClick={() => { reset(); setIsDialogOpen(false); }}>Annulla</Button>
+                   <Button type="button" variant="outline" onClick={resetFormStates}>Annulla</Button>
                 </DialogClose>
-                <Button type="submit" className="bg-primary hover:bg-primary/90 text-primary-foreground">Salva Orologio</Button>
+                <Button type="submit" className="bg-primary hover:bg-primary/90 text-primary-foreground">{editingWatch ? "Salva Modifiche" : "Salva Orologio"}</Button>
               </DialogFooter>
             </form>
           </DialogContent>
@@ -153,7 +245,12 @@ export default function AdminOrologiPage() {
             <CardTitle className="font-headline text-xl text-primary">Catalogo Orologi</CardTitle>
             <div className="relative w-full sm:w-auto">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Cerca orologi..." className="pl-9 w-full sm:w-[250px] bg-input" />
+              <Input 
+                placeholder="Cerca per nome o marca..." 
+                className="pl-9 w-full sm:w-[250px] bg-input" 
+                value={searchTerm}
+                onChange={handleSearchChange}
+              />
             </div>
           </div>
         </CardHeader>
@@ -170,7 +267,7 @@ export default function AdminOrologiPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {watchesList.length > 0 ? watchesList.map((watch) => (
+              {filteredWatches.length > 0 ? filteredWatches.map((watch) => (
                 <TableRow key={watch.id}>
                   <TableCell>
                     <Image src={watch.imageUrl} alt={watch.name} width={40} height={40} className="rounded-md" data-ai-hint={watch.dataAiHint || watch.name.split(" ").slice(0,2).join(" ").toLowerCase()} />
@@ -180,20 +277,36 @@ export default function AdminOrologiPage() {
                   <TableCell>€{watch.price.toLocaleString('it-IT')}</TableCell>
                   <TableCell>{watch.stock > 0 ? `${watch.stock} pz.` : <span className="text-destructive">Esaurito</span>}</TableCell>
                   <TableCell className="text-right space-x-2">
-                    <Button variant="ghost" size="icon" className="text-primary hover:text-primary/80">
+                    <Button variant="ghost" size="icon" className="text-primary hover:text-primary/80" onClick={() => handleEditClick(watch)}>
                       <Edit className="h-4 w-4" />
                       <span className="sr-only">Modifica</span>
                     </Button>
-                    <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive/80">
-                      <Trash2 className="h-4 w-4" />
-                       <span className="sr-only">Elimina</span>
-                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive/80" onClick={() => handleDeleteConfirmation(watch)}>
+                          <Trash2 className="h-4 w-4" />
+                          <span className="sr-only">Elimina</span>
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent className="bg-card border-border/60">
+                        <AlertDialogHeader>
+                          <AlertDialogTitle className="text-primary">Sei sicuro?</AlertDialogTitle>
+                          <AlertDialogDescription className="text-muted-foreground">
+                            Questa azione non può essere annullata. L'orologio "{watchToDelete?.name}" verrà eliminato permanentemente.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel onClick={() => setWatchToDelete(null)} className="hover:bg-muted/50">Annulla</AlertDialogCancel>
+                          <AlertDialogAction onClick={executeDelete} className="bg-destructive hover:bg-destructive/90 text-destructive-foreground">Elimina</AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </TableCell>
                 </TableRow>
               )) : (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
-                    Nessun orologio nel catalogo. Inizia aggiungendone uno!
+                    {searchTerm ? `Nessun orologio trovato per "${searchTerm}".` : "Nessun orologio nel catalogo. Inizia aggiungendone uno!"}
                   </TableCell>
                 </TableRow>
               )}
@@ -202,7 +315,7 @@ export default function AdminOrologiPage() {
         </CardContent>
       </Card>
       <p className="text-center text-sm text-muted-foreground">
-        Le funzionalità di ricerca, modifica ed eliminazione non sono ancora implementate.
+        Le funzionalità di aggiunta, modifica, eliminazione e ricerca (per nome/marca) sono ora implementate.
       </p>
     </div>
   );

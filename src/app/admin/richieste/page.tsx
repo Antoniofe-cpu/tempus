@@ -1,4 +1,7 @@
 
+'use client';
+
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, Search } from "lucide-react";
@@ -13,7 +16,26 @@ const mockRequests = [
   { id: "REQ004", clientName: "Anna Neri", watchType: "Cronografo", status: "Nuova", date: "2024-07-29" },
 ];
 
+type Request = typeof mockRequests[0];
+
 export default function AdminRichiestePage() {
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(event.target.value.toLowerCase());
+  };
+
+  const filteredRequests = mockRequests.filter((request) => {
+    const term = searchTerm.toLowerCase();
+    return (
+      request.id.toLowerCase().includes(term) ||
+      request.clientName.toLowerCase().includes(term) ||
+      request.watchType.toLowerCase().includes(term) ||
+      request.status.toLowerCase().includes(term)
+    );
+  });
+
+
   return (
     <div className="space-y-8 w-full">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -33,7 +55,12 @@ export default function AdminRichiestePage() {
             <CardTitle className="font-headline text-xl text-primary">Elenco Richieste</CardTitle>
             <div className="relative w-full sm:w-auto">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Cerca richieste..." className="pl-9 w-full sm:w-[250px] bg-input" />
+              <Input 
+                placeholder="Cerca per ID, cliente, tipo, stato..." 
+                className="pl-9 w-full sm:w-[300px] bg-input" 
+                value={searchTerm}
+                onChange={handleSearchChange}
+              />
             </div>
           </div>
         </CardHeader>
@@ -50,7 +77,7 @@ export default function AdminRichiestePage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {mockRequests.map((request) => (
+              {filteredRequests.length > 0 ? filteredRequests.map((request) => (
                 <TableRow key={request.id}>
                   <TableCell className="font-medium">{request.id}</TableCell>
                   <TableCell>{request.clientName}</TableCell>
@@ -72,13 +99,19 @@ export default function AdminRichiestePage() {
                     <Button variant="ghost" size="sm" className="text-primary hover:text-primary/80">Dettagli</Button>
                   </TableCell>
                 </TableRow>
-              ))}
+              )) : (
+                 <TableRow>
+                  <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                    {searchTerm ? `Nessuna richiesta trovata per "${searchTerm}".` : "Nessuna richiesta presente."}
+                  </TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
         </CardContent>
       </Card>
       <p className="text-center text-sm text-muted-foreground">
-        Funzionalità di gestione dettagliata delle richieste (modifica, assegnazione, ecc.) non ancora implementate.
+        La funzione di ricerca è implementata. La gestione dettagliata (aggiunta, modifica, assegnazione, ecc.) non è ancora implementata.
       </p>
     </div>
   );
