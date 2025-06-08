@@ -174,7 +174,7 @@ export default async function WatchDetailPage({ params }: Props) {
 
               {features.length > 0 && (
                 <div className="mb-6">
-                    <Accordion type="single" collapsible className="w-full" defaultValue="detailed-features">
+                    <Accordion type="single" collapsible className="w-full">
                         <AccordionItem value="detailed-features">
                             <AccordionTrigger className="text-xl font-semibold text-primary hover:no-underline mb-2">
                                 Caratteristiche Dettagliate
