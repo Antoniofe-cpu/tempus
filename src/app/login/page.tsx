@@ -1,7 +1,26 @@
 
 'use client';
+
+import { Suspense, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { Suspense, umessage: "La password è obbligatoria." }),
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
+import { signInWithEmailAndPassword, type AuthError } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
+import Header from '@/components/layout/Header';
+import Footer from '@/components/layout/Footer';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { useToast } from '@/hooks/use-toast';
+import { Loader2, LogInIcon } from 'lucide-react';
+
+const LoginFormSchema = z.object({
+  email: z.string().email({ message: "L'email è obbligatoria e deve essere valida." }),
+  password: z.string().min(1, { message: "La password è obbligatoria." }),
 });
 
 type LoginFormData = z.infer<typeof LoginFormSchema>;
