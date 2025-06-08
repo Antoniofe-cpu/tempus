@@ -3,7 +3,7 @@
 'use server';
 
 import type { AppSettings, AppSettingsFirestoreData } from '@/lib/types';
-import { db } from '@/lib/firebase'; // storage non è più necessario qui
+import { db } from '@/lib/firebase';
 import {
   doc,
   getDoc,
@@ -11,7 +11,6 @@ import {
   Timestamp,
   serverTimestamp,
 } from 'firebase/firestore';
-// ref, uploadBytes, getDownloadURL da firebase/storage sono stati rimossi perché l'upload avviene nel client
 
 const SETTINGS_COLLECTION = 'appConfiguration';
 const SETTINGS_DOC_ID = 'mainSettings';
@@ -20,14 +19,22 @@ const defaultSettings: AppSettings = {
   appName: 'Tempus Concierge',
   contactEmail: 'info@tempusconcierge.com',
   defaultCurrency: 'EUR',
-  mainServicesIconUrl: '', 
+  iconUrlCompra: '',
+  iconUrlVendi: '',
+  iconUrlCerca: '',
+  iconUrlRipara: '',
 };
 
 const fromFirestore = (data: AppSettingsFirestoreData, id: string): AppSettings => {
   return {
     id,
-    ...data,
-    mainServicesIconUrl: data.mainServicesIconUrl || '',
+    appName: data.appName,
+    contactEmail: data.contactEmail,
+    defaultCurrency: data.defaultCurrency,
+    iconUrlCompra: data.iconUrlCompra || '',
+    iconUrlVendi: data.iconUrlVendi || '',
+    iconUrlCerca: data.iconUrlCerca || '',
+    iconUrlRipara: data.iconUrlRipara || '',
     updatedAt: data.updatedAt?.toDate(),
   };
 };
@@ -41,20 +48,17 @@ export async function getAppSettings(): Promise<AppSettings> {
       return fromFirestore(docSnap.data() as AppSettingsFirestoreData, docSnap.id);
     } else {
       console.log(`Documento impostazioni ${SETTINGS_DOC_ID} non trovato. Inizializzazione con valori di default.`);
-      // Qui usiamo i defaultSettings definiti sopra che includono mainServicesIconUrl
       const initialSettingsData: AppSettingsFirestoreData = {
-        appName: defaultSettings.appName,
-        contactEmail: defaultSettings.contactEmail,
-        defaultCurrency: defaultSettings.defaultCurrency,
-        mainServicesIconUrl: defaultSettings.mainServicesIconUrl,
+        ...defaultSettings, // i default ora includono i nuovi campi iconUrl
         updatedAt: serverTimestamp() as Timestamp,
       };
+      // Rimuovi 'id' dai dati iniziali se presente in defaultSettings (non dovrebbe esserci)
+      delete (initialSettingsData as any).id; 
       await setDoc(docRef, initialSettingsData);
       return { ...defaultSettings, id: SETTINGS_DOC_ID, updatedAt: new Date() }; 
     }
   } catch (error) {
     console.error("Errore in getAppSettings (Firestore): ", error);
-    // In caso di errore, restituisci i default, ma logga l'errore
     return { ...defaultSettings, id: SETTINGS_DOC_ID };
   }
 }
@@ -67,9 +71,11 @@ export async function updateAppSettings(settingsData: Partial<Omit<AppSettings, 
       updatedAt: serverTimestamp() as Timestamp,
     };
     
-    if (settingsData.mainServicesIconUrl === undefined) {
-      dataToUpdate.mainServicesIconUrl = '';
-    }
+    // Assicura che gli URL delle icone siano stringhe vuote se non definiti, per evitare 'undefined' in Firestore
+    if (settingsData.iconUrlCompra === undefined) dataToUpdate.iconUrlCompra = '';
+    if (settingsData.iconUrlVendi === undefined) dataToUpdate.iconUrlVendi = '';
+    if (settingsData.iconUrlCerca === undefined) dataToUpdate.iconUrlCerca = '';
+    if (settingsData.iconUrlRipara === undefined) dataToUpdate.iconUrlRipara = '';
     
     await setDoc(docRef, dataToUpdate, { merge: true });
   } catch (error) {
@@ -78,4 +84,4 @@ export async function updateAppSettings(settingsData: Partial<Omit<AppSettings, 
   }
 }
 
-// La funzione uploadAppSettingsIcon è stata rimossa da qui e spostata nel client component.
+    

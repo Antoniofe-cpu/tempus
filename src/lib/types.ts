@@ -279,7 +279,10 @@ export interface AppSettings {
   appName: string;
   contactEmail: string;
   defaultCurrency: string;
-  mainServicesIconUrl?: string; // Nuovo campo per l'icona principale dei servizi
+  iconUrlCompra?: string;
+  iconUrlVendi?: string;
+  iconUrlCerca?: string;
+  iconUrlRipara?: string;
   updatedAt?: Date;
 }
 
@@ -287,6 +290,12 @@ export interface AppSettingsFirestoreData {
   appName: string;
   contactEmail: string;
   defaultCurrency: string;
-  mainServicesIconUrl?: string; // Nuovo campo per l'icona principale dei servizi
+  iconUrlCompra?: string;
+  iconUrlVendi?: string;
+  iconUrlCerca?: string;
+  iconUrlRipara?: string;
   updatedAt?: import('firebase/firestore').Timestamp;
 }
+
+
+    

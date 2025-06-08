@@ -14,25 +14,43 @@ import { useToast } from "@/hooks/use-toast";
 import type { AppSettings } from '@/lib/types';
 import { getAppSettings, updateAppSettings } from '@/services/appSettingsService';
 import Image from 'next/image';
-import { storage } from '@/lib/firebase'; // Import storage
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'; // Import per Firebase Storage
+import { storage } from '@/lib/firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 const AppSettingsSchema = z.object({
   appName: z.string().min(3, { message: "Il nome dell'applicazione deve avere almeno 3 caratteri." }),
   contactEmail: z.string().email({ message: "Inserisci un indirizzo email valido." }),
   defaultCurrency: z.string().length(3, { message: "Il codice valuta deve essere di 3 caratteri (es. EUR)." }).toUpperCase(),
-  mainServicesIconUrl: z.string().url({message: "L'URL dell'icona non è valido."}).optional().or(z.literal('')),
+  iconUrlCompra: z.string().url({message: "L'URL dell'icona Compra non è valido."}).optional().or(z.literal('')),
+  iconUrlVendi: z.string().url({message: "L'URL dell'icona Vendi non è valido."}).optional().or(z.literal('')),
+  iconUrlCerca: z.string().url({message: "L'URL dell'icona Cerca non è valido."}).optional().or(z.literal('')),
+  iconUrlRipara: z.string().url({message: "L'URL dell'icona Ripara non è valido."}).optional().or(z.literal('')),
 });
 
 type AppSettingsFormData = z.infer<typeof AppSettingsSchema>;
+
+interface ServiceIconField {
+  key: keyof Pick<AppSettingsFormData, 'iconUrlCompra' | 'iconUrlVendi' | 'iconUrlCerca' | 'iconUrlRipara'>;
+  label: string;
+  fileState: File | null;
+  setFileState: React.Dispatch<React.SetStateAction<File | null>>;
+  currentUrlState: string | undefined;
+  setCurrentUrlState: React.Dispatch<React.SetStateAction<string | undefined>>;
+}
 
 export default function AdminImpostazioniPage() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [mainServicesIconFile, setMainServicesIconFile] = useState<File | null>(null);
-  const [currentIconUrl, setCurrentIconUrl] = useState<string | undefined>('');
 
+  const [iconFileCompra, setIconFileCompra] = useState<File | null>(null);
+  const [currentIconUrlCompra, setCurrentIconUrlCompra] = useState<string | undefined>('');
+  const [iconFileVendi, setIconFileVendi] = useState<File | null>(null);
+  const [currentIconUrlVendi, setCurrentIconUrlVendi] = useState<string | undefined>('');
+  const [iconFileCerca, setIconFileCerca] = useState<File | null>(null);
+  const [currentIconUrlCerca, setCurrentIconUrlCerca] = useState<string | undefined>('');
+  const [iconFileRipara, setIconFileRipara] = useState<File | null>(null);
+  const [currentIconUrlRipara, setCurrentIconUrlRipara] = useState<string | undefined>('');
 
   const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm<AppSettingsFormData>({
     resolver: zodResolver(AppSettingsSchema),
@@ -40,15 +58,22 @@ export default function AdminImpostazioniPage() {
         appName: '',
         contactEmail: '',
         defaultCurrency: 'EUR',
-        mainServicesIconUrl: '',
+        iconUrlCompra: '',
+        iconUrlVendi: '',
+        iconUrlCerca: '',
+        iconUrlRipara: '',
     }
   });
 
-  const watchedIconUrl = watch('mainServicesIconUrl');
+  const watchedIconUrlCompra = watch('iconUrlCompra');
+  const watchedIconUrlVendi = watch('iconUrlVendi');
+  const watchedIconUrlCerca = watch('iconUrlCerca');
+  const watchedIconUrlRipara = watch('iconUrlRipara');
 
-  useEffect(() => {
-    setCurrentIconUrl(watchedIconUrl);
-  }, [watchedIconUrl]);
+  useEffect(() => { setCurrentIconUrlCompra(watchedIconUrlCompra); }, [watchedIconUrlCompra]);
+  useEffect(() => { setCurrentIconUrlVendi(watchedIconUrlVendi); }, [watchedIconUrlVendi]);
+  useEffect(() => { setCurrentIconUrlCerca(watchedIconUrlCerca); }, [watchedIconUrlCerca]);
+  useEffect(() => { setCurrentIconUrlRipara(watchedIconUrlRipara); }, [watchedIconUrlRipara]);
 
   useEffect(() => {
     async function loadSettings() {
@@ -59,9 +84,15 @@ export default function AdminImpostazioniPage() {
             appName: settings.appName,
             contactEmail: settings.contactEmail,
             defaultCurrency: settings.defaultCurrency,
-            mainServicesIconUrl: settings.mainServicesIconUrl || '',
+            iconUrlCompra: settings.iconUrlCompra || '',
+            iconUrlVendi: settings.iconUrlVendi || '',
+            iconUrlCerca: settings.iconUrlCerca || '',
+            iconUrlRipara: settings.iconUrlRipara || '',
         });
-        setCurrentIconUrl(settings.mainServicesIconUrl || '');
+        setCurrentIconUrlCompra(settings.iconUrlCompra || '');
+        setCurrentIconUrlVendi(settings.iconUrlVendi || '');
+        setCurrentIconUrlCerca(settings.iconUrlCerca || '');
+        setCurrentIconUrlRipara(settings.iconUrlRipara || '');
       } catch (error) {
         toast({
           title: "Errore Caricamento Impostazioni",
@@ -75,54 +106,56 @@ export default function AdminImpostazioniPage() {
     loadSettings();
   }, [reset, toast]);
 
-  const handleIconFileChange = (event: ChangeEvent<HTMLInputElement>) => {
+  const handleIconFileChange = (
+    event: ChangeEvent<HTMLInputElement>,
+    setFileState: React.Dispatch<React.SetStateAction<File | null>>
+  ) => {
     const file = event.target.files?.[0];
-    if (file) {
-      setMainServicesIconFile(file);
-    } else {
-      setMainServicesIconFile(null);
-    }
+    setFileState(file || null);
   };
 
-  // Logica di upload spostata qui
-  const uploadIconAndGetURL = async (file: File, iconName: string = 'main-services-icon'): Promise<string> => {
+  const uploadIconAndGetURL = async (file: File, iconName: string): Promise<string> => {
     try {
       const fileName = `app-settings-icons/${iconName}-${Date.now()}-${file.name}`;
       const storageRef = ref(storage, fileName);
-
       const snapshot = await uploadBytes(storageRef, file);
-      const downloadURL = await getDownloadURL(snapshot.ref);
-      return downloadURL;
+      return await getDownloadURL(snapshot.ref);
     } catch (error: any) {
-      console.error("Error uploading app settings icon (client-side):", error);
-      // Loggare dettagli specifici dell'errore se disponibili
-      if (error.code) console.error("Firebase Error Code:", error.code);
-      if (error.message) console.error("Firebase Error Message:", error.message);
-      if (error.serverResponse) console.error("Firebase Server Response:", error.serverResponse);
-      throw new Error(`Impossibile caricare l'icona: ${error.message || 'Errore sconosciuto durante upload.'}`);
+      console.error(`Error uploading ${iconName} icon (client-side):`, error);
+      throw new Error(`Impossibile caricare l'icona ${iconName}: ${error.message || 'Errore sconosciuto durante upload.'}`);
     }
   };
 
+  const iconFields: ServiceIconField[] = [
+    { key: 'iconUrlCompra', label: 'Icona Card "Compra"', fileState: iconFileCompra, setFileState: setIconFileCompra, currentUrlState: currentIconUrlCompra, setCurrentUrlState: setCurrentIconUrlCompra },
+    { key: 'iconUrlVendi', label: 'Icona Card "Vendi"', fileState: iconFileVendi, setFileState: setIconFileVendi, currentUrlState: currentIconUrlVendi, setCurrentUrlState: setCurrentIconUrlVendi },
+    { key: 'iconUrlCerca', label: 'Icona Card "Cerca"', fileState: iconFileCerca, setFileState: setIconFileCerca, currentUrlState: currentIconUrlCerca, setCurrentUrlState: setCurrentIconUrlCerca },
+    { key: 'iconUrlRipara', label: 'Icona Card "Ripara"', fileState: iconFileRipara, setFileState: setIconFileRipara, currentUrlState: currentIconUrlRipara, setCurrentUrlState: setCurrentIconUrlRipara },
+  ];
 
   const onSubmit = async (data: AppSettingsFormData) => {
     setIsSaving(true);
-    let iconUrlToSave = data.mainServicesIconUrl;
+    const updatedIconUrls: Partial<Pick<AppSettingsFormData, 'iconUrlCompra' | 'iconUrlVendi' | 'iconUrlCerca' | 'iconUrlRipara'>> = {};
 
     try {
-      if (mainServicesIconFile) {
-        toast({ title: "Caricamento Icona", description: "L'icona è in fase di caricamento..."});
-        iconUrlToSave = await uploadIconAndGetURL(mainServicesIconFile, 'main-services-icon');
-        setValue('mainServicesIconUrl', iconUrlToSave); 
-        setCurrentIconUrl(iconUrlToSave); 
-        setMainServicesIconFile(null); 
-         toast({ title: "Icona Caricata", description: "Icona caricata con successo."});
+      for (const field of iconFields) {
+        let urlToSave = data[field.key];
+        if (field.fileState) {
+          toast({ title: `Caricamento Icona ${field.label}`, description: "L'icona è in fase di caricamento..."});
+          urlToSave = await uploadIconAndGetURL(field.fileState, field.key);
+          setValue(field.key, urlToSave); 
+          field.setCurrentUrlState(urlToSave); 
+          field.setFileState(null); 
+          toast({ title: `Icona ${field.label} Caricata`, description: "Icona caricata con successo."});
+        }
+        updatedIconUrls[field.key] = urlToSave || '';
       }
       
       const settingsToUpdate: Partial<Omit<AppSettings, 'id' | 'updatedAt'>> = {
         appName: data.appName,
         contactEmail: data.contactEmail,
         defaultCurrency: data.defaultCurrency,
-        mainServicesIconUrl: iconUrlToSave || '', 
+        ...updatedIconUrls,
       };
 
       await updateAppSettings(settingsToUpdate);
@@ -160,7 +193,7 @@ export default function AdminImpostazioniPage() {
         <CardHeader>
           <CardTitle className="font-headline text-xl text-primary">Configurazione Globale</CardTitle>
           <CardDescription className="text-muted-foreground">
-            Modifica i parametri di base dell'applicazione. Queste impostazioni sono salvate in Firestore.
+            Modifica i parametri di base dell'applicazione e le icone principali per le card servizio.
           </CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit(onSubmit)}>
@@ -199,52 +232,60 @@ export default function AdminImpostazioniPage() {
               />
               {errors.defaultCurrency && <p className="text-sm text-destructive mt-1">{errors.defaultCurrency.message}</p>}
             </div>
-
-            <div className="border-t border-border/40 pt-6 space-y-2">
-                <Label htmlFor="mainServicesIconFile" className="text-foreground/80 block">Icona Principale Servizi</Label>
-                <p className="text-xs text-muted-foreground mb-2">Carica un file immagine (es. PNG, JPG, SVG) da usare come icona generica per i servizi.</p>
-                <div className="flex items-center gap-3">
-                    <Input
-                        id="mainServicesIconFile"
-                        type="file"
-                        accept="image/*,.svg"
-                        onChange={handleIconFileChange}
-                        className="bg-input border-border focus:border-accent focus:ring-accent flex-grow"
-                        disabled={isSaving}
-                    />
-                    <ImageUp className="h-5 w-5 text-muted-foreground flex-shrink-0"/>
-                </div>
-                {mainServicesIconFile && (
-                    <p className="text-xs text-muted-foreground mt-1">Selezionato: {mainServicesIconFile.name}</p>
-                )}
-                {errors.mainServicesIconUrl && <p className="text-sm text-destructive mt-1">{errors.mainServicesIconUrl.message}</p>}
-                
-                {currentIconUrl && (
-                    <div className="mt-3 p-3 border rounded-md bg-muted/30">
-                        <p className="text-xs text-muted-foreground mb-2">Anteprima Icona Attuale:</p>
-                        <Image
-                            src={currentIconUrl}
-                            alt="Icona Principale Servizi"
-                            width={64}
-                            height={64}
-                            className="rounded-md border border-border object-contain"
-                            onError={(e) => { 
-                                e.currentTarget.src = 'https://placehold.co/64x64.png/transparent/transparent?text=Errore'; 
-                                e.currentTarget.srcset = '';
-                            }}
-                        />
-                    </div>
-                )}
-                 {!currentIconUrl && !mainServicesIconFile && (
-                    <div className="mt-3 p-3 border border-dashed rounded-md bg-muted/30 text-center">
-                        <AlertCircle className="h-6 w-6 text-muted-foreground mx-auto mb-1"/>
-                        <p className="text-xs text-muted-foreground">Nessuna icona attualmente impostata o selezionata.</p>
-                    </div>
-                )}
-                <Input type="hidden" {...register("mainServicesIconUrl")} />
-            </div>
             
+            <div className="border-t border-border/40 pt-6 space-y-4">
+                 <h3 className="text-lg font-semibold text-primary">Icone Card Servizio Principali</h3>
+                 <p className="text-xs text-muted-foreground">
+                    Queste icone possono essere usate come fallback o per rappresentare le sezioni servizio in vari punti dell'app.
+                    Sono diverse dalle icone specifiche che puoi caricare nella sezione "Gestione Servizi", ma possono sovrascriverle se quelle non sono impostate.
+                 </p>
+            </div>
 
+            {iconFields.map((field) => (
+              <div key={field.key} className="border-t border-border/40 pt-6 space-y-2">
+                  <Label htmlFor={`${field.key}-file`} className="text-foreground/80 block">{field.label}</Label>
+                  <p className="text-xs text-muted-foreground mb-2">Carica un file immagine (es. PNG, JPG, SVG).</p>
+                  <div className="flex items-center gap-3">
+                      <Input
+                          id={`${field.key}-file`}
+                          type="file"
+                          accept="image/*,.svg"
+                          onChange={(e) => handleIconFileChange(e, field.setFileState)}
+                          className="bg-input border-border focus:border-accent focus:ring-accent flex-grow"
+                          disabled={isSaving}
+                      />
+                      <ImageUp className="h-5 w-5 text-muted-foreground flex-shrink-0"/>
+                  </div>
+                  {field.fileState && (
+                      <p className="text-xs text-muted-foreground mt-1">Selezionato: {field.fileState.name}</p>
+                  )}
+                  {errors[field.key] && <p className="text-sm text-destructive mt-1">{errors[field.key]?.message}</p>}
+                  
+                  {field.currentUrlState && (
+                      <div className="mt-3 p-3 border rounded-md bg-muted/30">
+                          <p className="text-xs text-muted-foreground mb-2">Anteprima Icona Attuale:</p>
+                          <Image
+                              src={field.currentUrlState}
+                              alt={field.label}
+                              width={64}
+                              height={64}
+                              className="rounded-md border border-border object-contain"
+                              onError={(e) => { 
+                                  e.currentTarget.src = 'https://placehold.co/64x64.png/transparent/transparent?text=Errore'; 
+                                  e.currentTarget.srcset = '';
+                              }}
+                          />
+                      </div>
+                  )}
+                  {!field.currentUrlState && !field.fileState && (
+                      <div className="mt-3 p-3 border border-dashed rounded-md bg-muted/30 text-center">
+                          <AlertCircle className="h-6 w-6 text-muted-foreground mx-auto mb-1"/>
+                          <p className="text-xs text-muted-foreground">Nessuna icona per "{field.label}" attualmente impostata o selezionata.</p>
+                      </div>
+                  )}
+                  <Input type="hidden" {...register(field.key)} />
+              </div>
+            ))}
           </CardContent>
           <CardFooter className="border-t border-border/40 pt-6">
             <Button type="submit" className="bg-primary hover:bg-primary/90 text-primary-foreground" disabled={isSaving || isLoading}>
@@ -261,3 +302,5 @@ export default function AdminImpostazioniPage() {
     </div>
   );
 }
+
+    
