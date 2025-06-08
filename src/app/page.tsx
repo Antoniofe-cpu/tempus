@@ -26,28 +26,43 @@ export default function HomePage() {
 
   const fetchLatestWatches = useCallback(async () => {
     setIsLoadingLatestWatches(true);
-    console.log("HomePage: Inizio fetchLatestWatches (DEBUG MODE - loading all watches)");
+    console.log("HomePage: Inizio fetchLatestWatches");
     try {
       const allWatches = await getWatches(); 
       console.log(`HomePage: Totale orologi ricevuti da getWatches: ${allWatches.length}`);
+
+      // Log di ispezione per l'orologio di test specifico
+      const testWatchName = "OMEGA SEAMASTER - EDIZIONE TEST UNICA";
+      const testWatchInstance = allWatches.find(w => w.name === testWatchName);
+      if (testWatchInstance) {
+        console.log(`HomePage (DEBUG): OROLOGIO DI TEST TROVATO in allWatches! Dettagli:`, JSON.stringify(testWatchInstance, null, 2));
+      } else {
+        console.log(`HomePage (DEBUG): OROLOGIO DI TEST "${testWatchName}" ***NON TROVATO*** in allWatches.`);
+        if (allWatches.length > 0) {
+            console.log("HomePage (DEBUG): Primi orologi in allWatches per ispezione:", JSON.stringify(allWatches.slice(0, Math.min(5, allWatches.length)), null, 2));
+        } else {
+            console.log("HomePage (DEBUG): allWatches è vuoto.");
+        }
+      }
+
+      // Logica per selezionare i "Nuovi Arrivi"
+      const newArrivalsTrue = allWatches.filter(w => w.isNewArrival === true);
+      console.log(`HomePage: Filtrati ${newArrivalsTrue.length} orologi con isNewArrival === true.`);
+      newArrivalsTrue.forEach(w => console.log(`  - "Vero" Nuovo Arrivo: ${w.name}, ID: ${w.id}, isNewArrival: ${w.isNewArrival}, createdAt: ${w.createdAt ? new Date(w.createdAt).toISOString() : 'N/A'}`));
+
+      let watchesToShow: Watch[] = [];
+      if (newArrivalsTrue.length > 0) {
+        console.log("HomePage: Usando i 'Veri' Nuovi Arrivi (isNewArrival=true), prendendo i primi 3.");
+        // Gli 'allWatches' sono già ordinati per createdAt desc dal service
+        watchesToShow = newArrivalsTrue.slice(0, 3);
+      } else {
+        console.log("HomePage: Nessun 'Vero' Nuovo Arrivo. Usando gli ultimi 3 orologi per data di inserimento (fallback).");
+        watchesToShow = allWatches.slice(0, 3);
+      }
       
-      // --- DEBUG: Carica tutti gli orologi per vedere se quello di test è presente ---
-      setLatestWatches(allWatches);
-      console.log("HomePage (DEBUG): Caricati TUTTI gli orologi in latestWatches.");
-      allWatches.forEach(w => console.log(`  - DEBUG - Orologio caricato: ${w.name}, ID: ${w.id}, isNewArrival: ${w.isNewArrival}, Prezzo: ${w.price}`));
-      // --- FINE DEBUG ---
-
-      // Logica Originale (temporaneamente commentata per debug):
-      // const newArrivals = allWatches.filter(w => w.isNewArrival === true).slice(0, 3);
-      // console.log(`HomePage: Nuovi Arrivi filtrati (isNewArrival=true): ${newArrivals.length} orologi.`);
-      // newArrivals.forEach(w => console.log(`  - Nuovo Arrivo: ${w.name}, isNewArrival: ${w.isNewArrival}`));
-
-      // if (newArrivals.length > 0) {
-      //     setLatestWatches(newArrivals);
-      // } else {
-      //     console.log("HomePage: Nessun 'Nuovo Arrivo' trovato (isNewArrival=true). Uso gli ultimi 3 per data di inserimento.");
-      //     setLatestWatches(allWatches.slice(0, 3));
-      // }
+      setLatestWatches(watchesToShow);
+      console.log(`HomePage: Orologi finali selezionati per 'latestWatches' (max 3): ${watchesToShow.length}`);
+      watchesToShow.forEach(w => console.log(`  - Da Mostrare: ${w.name}, ID: ${w.id}, isNewArrival: ${w.isNewArrival}, createdAt: ${w.createdAt ? new Date(w.createdAt).toISOString() : 'N/A'}`));
 
     } catch (error) {
       console.error("Errore nel caricamento degli ultimi orologi:", error);
@@ -81,8 +96,8 @@ export default function HomePage() {
 
   useEffect(() => {
     if (!isLoadingLatestWatches) {
-      console.log("HomePage: Stato finale latestWatches (count):", latestWatches.length);
-      // latestWatches.forEach(w => console.log(`  HomePage - Stato Finale - Orologio: ${w.name}, isNewArrival: ${w.isNewArrival}, ID: ${w.id}`));
+      console.log("HomePage: Stato finale latestWatches per UI (count):", latestWatches.length);
+      // latestWatches.forEach(w => console.log(`  HomePage - Stato Finale UI - Orologio: ${w.name}, isNewArrival: ${w.isNewArrival}, ID: ${w.id}`));
     }
   }, [latestWatches, isLoadingLatestWatches]);
 
@@ -162,7 +177,7 @@ export default function HomePage() {
                     </div>
                 ) : latestWatches.length > 0 ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-                        {latestWatches.slice(0,3).map((watch) => ( // Mostra solo i primi 3, ma tutti sono in latestWatches per il debug
+                        {latestWatches.map((watch) => ( 
                             <WatchCard key={watch.id} watch={watch} />
                         ))}
                     </div>
@@ -219,3 +234,5 @@ export default function HomePage() {
     </div>
   );
 }
+
+    
