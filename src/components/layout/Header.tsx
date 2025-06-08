@@ -8,7 +8,7 @@ import AuthNavLinks from './AuthNavLinks'; // Importa il nuovo componente
 
 const mainNavItems = [
   { href: '/', label: 'Home', icon: <WatchIcon className="h-5 w-5 text-accent" /> },
-  { href: '/occasioni', label: 'Occasioni', icon: <Search className="h-5 w-5 text-accent" /> },
+  { href: '/shop', label: 'Shop', icon: <Search className="h-5 w-5 text-accent" /> },
   { href: '/richiesta-personalizzata', label: 'Richiesta', icon: <Briefcase className="h-5 w-5 text-accent" /> },
 ];
 

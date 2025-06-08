@@ -5,69 +5,38 @@ import { useState, useEffect, useCallback } from 'react';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import WatchCard from '@/components/WatchCard';
-// WatchNewsSection non è usato in questa pagina, rimosso l'import se presente altrove
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowRight, GemIcon, SearchIcon, ShieldCheckIcon, WatchIcon as LucideWatchIcon, HandshakeIcon } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { ArrowRight, GemIcon, SearchIcon, ShieldCheckIcon, WatchIcon as LucideWatchIcon } from 'lucide-react';
 import type { Watch } from '@/lib/types';
-import type { ServiceCard as ServiceCardType } from '@/lib/types';
+import type { ServiceCard as ServiceCardType } from '@/lib/types'; // Assicurati che il tipo sia importato
 import { getServiceCards } from '@/services/serviceCardService';
 import { getWatches } from '@/services/watchService';
-import { useToast } from "@/hooks/use-toast";
-
-// Definizione corretta del ServiceCard component
-interface ServiceCardProps {
-  title: string;
-  description: string;
-  link: string;
-  iconUrl?: string;
-}
-
-function ServiceCard({ title, description, link, iconUrl }: ServiceCardProps) {
-  return (
-    <Card className="flex flex-col items-center text-center p-6 bg-card shadow-xl hover:shadow-accent/20 transition-shadow duration-300 h-full">
-      <CardHeader className="flex flex-col items-center pb-3">
-        {iconUrl ? (
-          <Image src={iconUrl} alt={`${title} icon`} width={48} height={48} className="mb-3 text-accent object-contain" data-ai-hint="servizio icona" />
-        ) : (
-          <HandshakeIcon className="h-12 w-12 text-accent mb-3" />
-        )}
-        <CardTitle className="font-headline text-xl text-primary">{title}</CardTitle>
-      </CardHeader>
-      <CardContent className="flex-grow pt-0">
-        <CardDescription className="text-foreground/70">{description}</CardDescription>
-      </CardContent>
-      <div className="mt-auto w-full">
-        <Button asChild variant="outline" className="w-full border-accent text-accent hover:bg-accent hover:text-accent-foreground">
-          <Link href={link}>Scopri di più</Link>
-        </Button>
-      </div>
-    </Card>
-  );
-}
-
+import { useToast } from '@/hooks/use-toast';
+import ServiceCard from '@/components/ServiceCard'; // Import corretto
 
 export default function HomePage() {
   const [latestWatches, setLatestWatches] = useState<Watch[]>([]);
   const [isLoadingLatestWatches, setIsLoadingLatestWatches] = useState(true);
-  const { toast } = useToast();
   const [serviceCards, setServiceCards] = useState<ServiceCardType[]>([]);
   const [isLoadingServiceCards, setIsLoadingServiceCards] = useState(true);
+  const { toast } = useToast();
 
   const fetchLatestWatches = useCallback(async () => {
     setIsLoadingLatestWatches(true);
     try {
-      const data = await getWatches(true); // Fetching only new arrivals
-      setLatestWatches(data);
+      const allWatches = await getWatches();
+      const newArrivals = allWatches.filter(w => (w as any).isNewArrival === true).slice(0, 3);
+      if (newArrivals.length > 0) {
+          setLatestWatches(newArrivals);
+      } else {
+          setLatestWatches(allWatches.slice(0, 3));
+      }
     } catch (error) {
       console.error("Errore nel caricamento degli ultimi orologi:", error);
-      toast({
-        title: "Errore Caricamento Dati",
-        description: "Impossibile caricare gli ultimi orologi.",
-        variant: "destructive",
-      });
+      toast({ title: "Errore", description: "Impossibile caricare i nuovi arrivi.", variant: "destructive" });
+      setLatestWatches([]);
     } finally {
       setIsLoadingLatestWatches(false);
     }
@@ -76,19 +45,17 @@ export default function HomePage() {
   const fetchServiceCardsData = useCallback(async () => {
     setIsLoadingServiceCards(true);
     try {
-      const data = await getServiceCards();
-      setServiceCards(data);
+      const cards = await getServiceCards();
+      setServiceCards(cards);
     } catch (error) {
-      console.error("Errore nel caricamento delle card servizio:", error);
-      toast({
-        title: "Errore Caricamento Dati",
-        description: "Impossibile caricare le informazioni sui servizi.",
-        variant: "destructive",
-      });
+      console.error("Errore nel caricamento delle service card:", error);
+      toast({ title: "Errore", description: "Impossibile caricare le schede servizio.", variant: "destructive" });
+      setServiceCards([]);
     } finally {
       setIsLoadingServiceCards(false);
     }
   }, [toast]);
+
 
   useEffect(() => {
     fetchLatestWatches();
@@ -120,7 +87,7 @@ export default function HomePage() {
                 </Link>
               </Button>
               <Button asChild variant="outline" size="lg" className="border-accent text-accent hover:bg-accent/10 hover:text-accent font-semibold group">
-                <Link href="/occasioni">
+                <Link href="/shop">
                   Scopri lo Shop
                   <SearchIcon className="ml-2 h-5 w-5 transition-transform group-hover:scale-110" />
                 </Link>
@@ -181,7 +148,7 @@ export default function HomePage() {
                     </div>
                 )}
                 <div className="text-center mt-10">
-                    <Button asChild size="lg">
+                    <Button asChild size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground">
                         <Link href="/shop">Vedi tutti gli orologi nello Shop</Link>
                     </Button>
                 </div>
@@ -200,12 +167,12 @@ export default function HomePage() {
                 ) : serviceCards.length > 0 ? (
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
                     {serviceCards.map((card) => (
-                      <ServiceCard 
-                        key={card.id} 
-                        title={card.title} 
-                        description={card.description} 
-                        link={card.link} 
-                        iconUrl={card.iconUrl} 
+                      <ServiceCard
+                        key={card.id}
+                        title={card.title}
+                        description={card.description}
+                        link={card.link}
+                        iconUrl={card.iconUrl}
                       />
                     ))}
                   </div>
