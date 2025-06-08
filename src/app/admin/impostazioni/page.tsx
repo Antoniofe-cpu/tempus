@@ -2,7 +2,7 @@
 'use client';
 
 import { useEffect, useState, type ChangeEvent } from 'react';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter, CardDescription } from "@/components/ui/card";
@@ -12,8 +12,10 @@ import { Label } from "@/components/ui/label";
 import { Loader2, Save, ImageUp, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type { AppSettings } from '@/lib/types';
-import { getAppSettings, updateAppSettings, uploadAppSettingsIcon } from '@/services/appSettingsService';
-import Image from 'next/image'; // Per l'anteprima
+import { getAppSettings, updateAppSettings } from '@/services/appSettingsService';
+import Image from 'next/image';
+import { storage } from '@/lib/firebase'; // Import storage
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'; // Import per Firebase Storage
 
 const AppSettingsSchema = z.object({
   appName: z.string().min(3, { message: "Il nome dell'applicazione deve avere almeno 3 caratteri." }),
@@ -77,11 +79,30 @@ export default function AdminImpostazioniPage() {
     const file = event.target.files?.[0];
     if (file) {
       setMainServicesIconFile(file);
-      // Preview locale se si volesse, ma per ora gestiamo solo il file
     } else {
       setMainServicesIconFile(null);
     }
   };
+
+  // Logica di upload spostata qui
+  const uploadIconAndGetURL = async (file: File, iconName: string = 'main-services-icon'): Promise<string> => {
+    try {
+      const fileName = `app-settings-icons/${iconName}-${Date.now()}-${file.name}`;
+      const storageRef = ref(storage, fileName);
+
+      const snapshot = await uploadBytes(storageRef, file);
+      const downloadURL = await getDownloadURL(snapshot.ref);
+      return downloadURL;
+    } catch (error: any) {
+      console.error("Error uploading app settings icon (client-side):", error);
+      // Loggare dettagli specifici dell'errore se disponibili
+      if (error.code) console.error("Firebase Error Code:", error.code);
+      if (error.message) console.error("Firebase Error Message:", error.message);
+      if (error.serverResponse) console.error("Firebase Server Response:", error.serverResponse);
+      throw new Error(`Impossibile caricare l'icona: ${error.message || 'Errore sconosciuto durante upload.'}`);
+    }
+  };
+
 
   const onSubmit = async (data: AppSettingsFormData) => {
     setIsSaving(true);
@@ -90,10 +111,10 @@ export default function AdminImpostazioniPage() {
     try {
       if (mainServicesIconFile) {
         toast({ title: "Caricamento Icona", description: "L'icona è in fase di caricamento..."});
-        iconUrlToSave = await uploadAppSettingsIcon(mainServicesIconFile, 'main-services-icon');
-        setValue('mainServicesIconUrl', iconUrlToSave); // Aggiorna il valore nel form per il prossimo submit
-        setCurrentIconUrl(iconUrlToSave); // Aggiorna l'URL per l'anteprima
-        setMainServicesIconFile(null); // Resetta il file dopo l'upload
+        iconUrlToSave = await uploadIconAndGetURL(mainServicesIconFile, 'main-services-icon');
+        setValue('mainServicesIconUrl', iconUrlToSave); 
+        setCurrentIconUrl(iconUrlToSave); 
+        setMainServicesIconFile(null); 
          toast({ title: "Icona Caricata", description: "Icona caricata con successo."});
       }
       
@@ -101,7 +122,7 @@ export default function AdminImpostazioniPage() {
         appName: data.appName,
         contactEmail: data.contactEmail,
         defaultCurrency: data.defaultCurrency,
-        mainServicesIconUrl: iconUrlToSave || '', // Assicura che sia stringa vuota se non c'è URL
+        mainServicesIconUrl: iconUrlToSave || '', 
       };
 
       await updateAppSettings(settingsToUpdate);
@@ -110,6 +131,7 @@ export default function AdminImpostazioniPage() {
         description: "Le impostazioni dell'applicazione sono state aggiornate con successo.",
       });
     } catch (error) {
+      console.error("Errore durante il salvataggio delle impostazioni (client-side, onSubmit):", error);
       toast({
         title: "Errore Salvataggio",
         description: (error as Error).message || "Impossibile salvare le impostazioni.",
