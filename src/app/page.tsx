@@ -6,9 +6,10 @@ import Footer from '@/components/layout/Footer';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowRight, WatchIcon, GemIcon, SearchIcon, ShieldCheckIcon, Loader2 } from 'lucide-react';
+import { ArrowRight, GemIcon, SearchIcon, ShieldCheckIcon, Loader2 } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
 import { generateHeroImage } from '@/ai/flows/generate-hero-image-flow';
+import { WatchIcon } from 'lucide-react'; // Assicurati che WatchIcon sia importato
 
 export default function HomePage() {
   const [heroImageUrl, setHeroImageUrl] = useState<string | null>(null);
@@ -19,7 +20,7 @@ export default function HomePage() {
       setIsLoadingImage(true);
       try {
         const result = await generateHeroImage({ 
-          prompt: "Un'immagine di alta qualità di un meccanismo di orologio di lusso, estremamente dettagliato, che mostri ingranaggi, rubini e metallo lucido. Illuminazione cinematografica e drammatica, adatta a un servizio concierge esclusivo." 
+          prompt: "Un'immagine di altissima qualità che evoca lusso, precisione ed esclusività nel mondo degli orologi da collezione. Uno scorcio di un laboratorio di un maestro orologiaio, con strumenti di precisione, ingranaggi scintillanti e un orologio capolavoro in fase di assemblaggio. Illuminazione calda e sofisticata, stile cinematografico." 
         });
         if (result.imageUrl && result.imageUrl !== "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7") {
           setHeroImageUrl(result.imageUrl);
@@ -58,7 +59,7 @@ export default function HomePage() {
                 data-ai-hint="orologi lusso meccanismo dettagliato"
               />
             )}
-             {!heroImageUrl && !isLoadingImage && ( // Mostra placeholder solo se l'URL non c'è E non sta caricando
+             {!heroImageUrl && !isLoadingImage && ( 
               <Image
                 src="https://placehold.co/1920x1080.png?text=Tempus+Concierge"
                 alt="Placeholder Tempus Concierge"
@@ -75,7 +76,7 @@ export default function HomePage() {
               Benvenuto in <span className="text-accent">Tempus Concierge</span>
             </h1>
             <p className="text-xl md:text-2xl text-foreground/80 max-w-3xl mx-auto mb-10">
-              Il tuo portale esclusivo per la ricerca e la consulenza di orologi da collezione e di lusso. Troviamo il pezzo perfetto per te.
+              Il tuo portale esclusivo per la ricerca e la consulenza di orologi da collezione e di lusso. Realizziamo la tua passione, orologio dopo orologio.
             </p>
             <div className="space-x-0 space-y-4 sm:space-y-0 sm:space-x-4">
               <Button asChild size="lg" className="bg-accent hover:bg-accent/90 text-accent-foreground font-semibold group">
