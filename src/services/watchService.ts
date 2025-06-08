@@ -149,29 +149,31 @@ export async function populateFirestoreWithMockDataIfNeeded(): Promise<void> {
   try {
     const snapshot = await getDocs(watchesCollection);
     if (snapshot.empty) {
-      console.log('Collezione "watches" vuota. Popolamento con dati mock...');
+      console.log('COLLEZIONE "watches" VUOTA. Inizio popolamento con dati mock...');
       for (const watch of initialMockWatches) {
+        console.log(`--- Popolamento: Tentativo di aggiungere l'orologio: ${watch.name} (ID mock: ${watch.id})`);
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { id, ...watchData } = watch; 
         const dataToSave: Partial<WatchFirestoreData> = {
-          ...watchData,
+          ...watchData, // Tutti i campi del mock watch (inclusi isNewArrival, ecc.)
           createdAt: serverTimestamp() as Timestamp,
           updatedAt: serverTimestamp() as Timestamp,
         };
+        // Rimuovi chiavi con valore undefined prima di salvare
         Object.keys(dataToSave).forEach(key => {
             if (dataToSave[key as keyof WatchFirestoreData] === undefined) {
                 delete dataToSave[key as keyof WatchFirestoreData];
             }
         });
-        await addDoc(watchesCollection, dataToSave);
+        // console.log(`--- Popolamento: Dati da salvare per ${watch.name}:`, JSON.stringify(dataToSave, null, 2));
+        const docRef = await addDoc(watchesCollection, dataToSave);
+        console.log(`--- Popolamento: Orologio "${watch.name}" aggiunto con ID Firestore: ${docRef.id}`);
       }
-      console.log('Popolamento completato.');
+      console.log('POPOLAMENTO COMPLETATO CON SUCCESSO.');
     } else {
-      console.log('Collezione "watches" già popolata o contiene dati.');
+      console.log(`COLLEZIONE "watches" GIA' POPOLATA O CONTIENE DATI (${snapshot.size} documenti trovati). Popolamento saltato.`);
     }
   } catch (error) {
-    console.error("Errore durante il popolamento di Firestore con dati mock:", error);
+    console.error("ERRORE DURANTE IL POPOLAMENTO DI FIRESTORE con dati mock:", error);
   }
 }
-
-    

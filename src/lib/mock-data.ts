@@ -112,28 +112,27 @@ export const watchesData: Watch[] = [
   },
   { 
     id: "TEST001", 
-    name: "Omega Seamaster Test Edition", 
-    brand: "Omega", 
-    price: 6500, 
-    stock: 3, 
-    imageUrl: "https://placehold.co/600x400.png", 
-    dataAiHint: "Omega Seamaster test", 
-    description: "Un'edizione speciale di test del Seamaster, perfetta per collaudare le funzionalità dello shop. Robusta e affidabile.",
-    rarity: 'Test Sample',
-    condition: 'Nuovo (Test)',
-    isNewArrival: true,
-    referenceNumber: "TEST-REF-001",
-    caseMaterial: "Acciaio Inox di Test",
-    caseDiameter: "42mm",
-    movementType: "Automatico Co-Axial (Test)",
-    dialColor: "Blu Test",
-    functions: ["Ora di Test", "Data di Test", "Resistenza Test"],
-    complications: ["Fasi Lunari di Test"],
-    yearOfProduction: 2024,
+    name: "OMEGA SEAMASTER - EDIZIONE TEST UNICA", 
+    brand: "OMEGA (TEST)", 
+    price: 99999, 
+    stock: 1000, 
+    imageUrl: "https://placehold.co/600x400/ff0000/ffffff.png?text=TEST+WATCH+VISIBLE", 
+    dataAiHint: "test watch visible", 
+    description: "OROLOGIO DI TEST UNICO E INCONFONDIBILE - Omega Seamaster Test Edition. Perfetta per collaudare le funzionalità dello shop. Robusta e affidabile.",
+    rarity: 'UNICUM (Test)',
+    condition: 'Nuovo di Fabbrica (Test)',
+    isNewArrival: true, // Fondamentale per vederlo nei "Nuovi Arrivi"
+    referenceNumber: "TEST-REF-001-VISIBLE",
+    caseMaterial: "Adamantio di Test",
+    caseDiameter: "42mm (Test)",
+    movementType: "Automatico Co-Axial Potenziato (Test)",
+    dialColor: "Rosso Fuoco (Test)",
+    functions: ["Ora Esatta (Test)", "Data Cosmica (Test)", "Resistenza Estrema (Test)"],
+    complications: ["Fasi Lunari Multiple (Test)", "Teletrasporto (Beta Test)"],
+    yearOfProduction: new Date().getFullYear(), // Anno corrente per test
     additionalImageUrls: [
-        "https://placehold.co/600x400.png?text=Test+Img+1",
-        "https://placehold.co/600x400.png?text=Test+Img+2"
+        "https://placehold.co/600x400/00ff00/000000.png?text=Test+Img+1+Green",
+        "https://placehold.co/600x400/0000ff/ffffff.png?text=Test+Img+2+Blue"
     ]
   }
 ];
-

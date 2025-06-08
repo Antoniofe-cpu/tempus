@@ -26,15 +26,21 @@ export default function HomePage() {
 
   const fetchLatestWatches = useCallback(async () => {
     setIsLoadingLatestWatches(true);
+    console.log("HomePage: Inizio fetchLatestWatches");
     try {
-      const allWatches = await getWatches();
-      const newArrivals = allWatches.filter(w => (w as any).isNewArrival === true).slice(0, 3);
+      const allWatches = await getWatches(); // getWatches ora ordina per createdAt
+      console.log(`HomePage: Totale orologi ricevuti da getWatches: ${allWatches.length}`);
+      
+      const newArrivals = allWatches.filter(w => w.isNewArrival === true).slice(0, 3);
+      console.log(`HomePage: Nuovi Arrivi filtrati (isNewArrival=true): ${newArrivals.length} orologi.`);
+      newArrivals.forEach(w => console.log(`  - Nuovo Arrivo: ${w.name}, isNewArrival: ${w.isNewArrival}`));
+
       if (newArrivals.length > 0) {
           setLatestWatches(newArrivals);
       } else {
-          // Se non ci sono "isNewArrival", prendi gli ultimi 3 per data di inserimento (se disponibile) o semplicemente i primi
-          // Questa logica potrebbe essere migliorata se ci fosse un campo "createdAt"
-          setLatestWatches(allWatches.sort((a, b) => (b as any).createdAt?.toDate() - (a as any).createdAt?.toDate()).slice(0, 3));
+          console.log("HomePage: Nessun 'Nuovo Arrivo' trovato (isNewArrival=true). Uso gli ultimi 3 per data di inserimento.");
+          // Se non ci sono "isNewArrival", prendi gli ultimi 3 per data di inserimento (getWatches già li ordina)
+          setLatestWatches(allWatches.slice(0, 3));
       }
     } catch (error) {
       console.error("Errore nel caricamento degli ultimi orologi:", error);
@@ -42,6 +48,7 @@ export default function HomePage() {
       setLatestWatches([]);
     } finally {
       setIsLoadingLatestWatches(false);
+      console.log("HomePage: Fine fetchLatestWatches");
     }
   }, [toast]);
 
@@ -64,6 +71,13 @@ export default function HomePage() {
     fetchLatestWatches();
     fetchServiceCardsData();
   }, [fetchLatestWatches, fetchServiceCardsData]);
+
+  useEffect(() => {
+    // Log dello stato finale di latestWatches dopo l'aggiornamento
+    if (!isLoadingLatestWatches) {
+      console.log("HomePage: Stato finale latestWatches:", latestWatches);
+    }
+  }, [latestWatches, isLoadingLatestWatches]);
 
 
   return (
