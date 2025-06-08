@@ -2,16 +2,15 @@
 import { initializeApp, getApps, getApp, type FirebaseApp } from 'firebase/app';
 import { getFirestore, type Firestore } from 'firebase/firestore';
 
-// ATTENZIONE: Sostituisci questi valori con le tue credenziali Firebase!
-// Puoi trovarle nella console Firebase > Impostazioni progetto > Generali > Le tue app > Configurazione SDK.
+// Configurazione Firebase per il progetto "tempus-concierge"
 const firebaseConfig = {
   apiKey: "AIzaSyAN0v1Fq9mDOZ8-9CKlO99o50mCrS6ByiY",
   authDomain: "tempus-concierge.firebaseapp.com",
-  projectId: "tempus-concierge", // Assicurati che questo sia il Project ID corretto!
+  projectId: "tempus-concierge", // Confermato come Project ID corretto
   storageBucket: "tempus-concierge.firebasestorage.app",
   messagingSenderId: "544608215639",
   appId: "1:544608215639:web:099bf420d083fa9f64f912",
-  // measurementId: "TUO_MEASUREMENT_ID" // Opzionale, se usi Google Analytics
+  // measurementId: "G-XXXXXXXXXX" // Opzionale, se usi Google Analytics
 };
 
 // Inizializza Firebase
