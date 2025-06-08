@@ -19,9 +19,9 @@ export default function HomePage() {
       setIsLoadingImage(true);
       try {
         const result = await generateHeroImage({ 
-          prompt: "Un'ambientazione sofisticata che evoca il lusso e l'esclusività del servizio Tempus Concierge. Dettagli come un elegante orologio da polso su una scrivania di legno scuro, strumenti orologieri, e una luce calda e accogliente." 
+          prompt: "Un'immagine di alta qualità di un meccanismo di orologio di lusso, estremamente dettagliato, che mostri ingranaggi, rubini e metallo lucido. Illuminazione cinematografica e drammatica, adatta a un servizio concierge esclusivo." 
         });
-        if (result.imageUrl) {
+        if (result.imageUrl && result.imageUrl !== "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7") {
           setHeroImageUrl(result.imageUrl);
         } else {
           setHeroImageUrl("https://placehold.co/1920x1080.png?text=Benvenuti+in+Tempus+Concierge");
@@ -54,17 +54,18 @@ export default function HomePage() {
                 fill
                 style={{ objectFit: 'cover' }}
                 quality={80}
-                data-ai-hint="orologi lusso scrivania elegante"
+                priority
+                data-ai-hint="orologi lusso meccanismo dettagliato"
               />
             )}
-             {!heroImageUrl && !isLoadingImage && (
+             {!heroImageUrl && !isLoadingImage && ( // Mostra placeholder solo se l'URL non c'è E non sta caricando
               <Image
                 src="https://placehold.co/1920x1080.png?text=Tempus+Concierge"
                 alt="Placeholder Tempus Concierge"
                 fill
                 style={{ objectFit: 'cover' }}
                 quality={80}
-                data-ai-hint="orologi lusso scrivania"
+                data-ai-hint="orologi lusso concierge"
               />
             )}
           </div>
@@ -74,7 +75,7 @@ export default function HomePage() {
               Benvenuto in <span className="text-accent">Tempus Concierge</span>
             </h1>
             <p className="text-xl md:text-2xl text-foreground/80 max-w-3xl mx-auto mb-10">
-              Esplora il mondo dell'alta orologeria con Tempus Concierge. Offriamo un servizio esclusivo per trovare, acquistare e vendere orologi da collezione e di lusso, con consulenza personalizzata e accesso a pezzi unici.
+              Il tuo portale esclusivo per la ricerca e la consulenza di orologi da collezione e di lusso. Troviamo il pezzo perfetto per te.
             </p>
             <div className="space-x-0 space-y-4 sm:space-y-0 sm:space-x-4">
               <Button asChild size="lg" className="bg-accent hover:bg-accent/90 text-accent-foreground font-semibold group">
