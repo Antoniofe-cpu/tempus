@@ -19,13 +19,13 @@ export default function HomePage() {
         <section className="relative py-20 md:py-32 text-center overflow-hidden min-h-[400px] md:min-h-[500px] flex items-center justify-center">
           <div className="absolute inset-0 opacity-30">
             <Image
-              src="/Gemini_Generated_Image_h7li38h7li38h7li.jpeg" 
+              src="https://placehold.co/1920x1080.png" 
               alt="Elegante collezione di orologi Tempus Concierge"
               fill
               style={{ objectFit: 'cover' }}
               quality={80}
               priority
-              data-ai-hint="orologi collezione lusso" // Leggera modifica qui
+              data-ai-hint="orologi lusso sfondo" 
             />
           </div>
           <div className="container relative z-10 mx-auto px-4">
