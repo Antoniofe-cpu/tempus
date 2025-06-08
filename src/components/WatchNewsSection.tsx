@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -37,7 +38,7 @@ export default function WatchNewsSection() {
 
   return (
     <section className="mt-16 pt-12 border-t border-border/40">
-      <h2 className="font-headline text-3xl md:text-4xl font-bold text-center text-primary mb-3">
+      <h2 className="font-headline text-3xl md:text-4xl font-bold text-center text-foreground mb-3"> {/* Colore del titolo modificato */}
         Ultime <span className="text-accent">Notizie</span>
       </h2>
       <p className="text-center text-muted-foreground mb-10 max-w-xl mx-auto">
