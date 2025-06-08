@@ -33,7 +33,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger, // Assicurati che AlertDialogTrigger sia importato qui
+  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { getWatches, addWatchService, updateWatchService, deleteWatchService, populateFirestoreWithMockDataIfNeeded } from '@/services/watchService';
 import { useToast } from "@/hooks/use-toast";
@@ -76,6 +76,27 @@ const WatchFormSchema = z.object({
 });
 
 type WatchFormData = z.infer<typeof WatchFormSchema>;
+
+// Funzione per ottenere un URL sicuro per next/image
+const getSafeImageUrl = (url?: string, placeholder: string = 'https://placehold.co/40x40.png'): string => {
+  if (!url || typeof url !== 'string') {
+    return placeholder;
+  }
+  try {
+    const parsedUrl = new URL(url);
+    // Elenco degli hostname configurati in next.config.js
+    const configuredHostnames = ['placehold.co', 'ibb.co']; 
+    if (parsedUrl.protocol === 'https:' && configuredHostnames.includes(parsedUrl.hostname)) {
+      return url; // URL valido e da host configurato
+    }
+    // Se l'hostname non è configurato o il protocollo non è https, usa il placeholder
+    return placeholder;
+  } catch (e) {
+    // Se l'URL non è parsabile (es. la concatenazione strana che causa l'errore)
+    return placeholder;
+  }
+};
+
 
 export default function AdminOrologiPage() {
   const [watchesList, setWatchesList] = useState<WatchType[]>([]);
@@ -166,8 +187,6 @@ export default function AdminOrologiPage() {
 
       const uploadedImageUrls = await uploadAdditionalImages(data.additionalImageFiles);
       
-      // Usa gli URL caricati se disponibili, altrimenti quelli dal textarea.
-      // Se in modifica e non sono stati caricati nuovi file, mantieni gli URL esistenti (se ci sono).
       if (uploadedImageUrls && uploadedImageUrls.length > 0) {
         additionalImageUrlsArray = uploadedImageUrls;
       } else if (editingWatch && !uploadedImageUrls && editingWatch.additionalImageUrls && editingWatch.additionalImageUrls.length > 0) {
@@ -478,13 +497,15 @@ export default function AdminOrologiPage() {
                 <TableRow key={watch.id}>
                   <TableCell>
                     <Image 
-                        src={watch.imageUrl || 'https://placehold.co/40x40.png'} 
+                        src={getSafeImageUrl(watch.imageUrl)}
                         alt={watch.name || 'Orologio'} 
                         width={40} 
                         height={40} 
                         className="rounded-md object-cover" 
                         data-ai-hint={watch.dataAiHint || (watch.name || '').split(" ").slice(0,2).join(" ").toLowerCase()}
                         onError={(e) => {
+                          // Questo onError è specifico del tag <Image>,
+                          // getSafeImageUrl previene l'errore a livello di src prop per next/image
                           e.currentTarget.src = 'https://placehold.co/40x40.png'; 
                           e.currentTarget.srcset = '';
                         }}
@@ -541,6 +562,8 @@ export default function AdminOrologiPage() {
     </div>
   );
 }
+
+    
 
     
 
