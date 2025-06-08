@@ -25,11 +25,15 @@ export default function HomePage() {
         if (result.imageUrl && result.imageUrl !== "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7") {
           setHeroImageUrl(result.imageUrl);
         } else {
-          setHeroImageUrl("https://placehold.co/1920x1080.png?text=Benvenuti+in+Tempus+Concierge");
+          // Fallback se il flow AI restituisce l'immagine placeholder (errore interno al flow)
+          setHeroImageUrl("https://placehold.co/1920x1080.png?text=Tempus+Concierge+Collection");
         }
       } catch (error) {
-        console.error("Failed to generate hero image:", error);
-        setHeroImageUrl("https://placehold.co/1920x1080.png?text=Errore+Caricamento+Immagine");
+        // Questo blocco viene eseguito se la chiamata alla Server Action generateHeroImage fallisce.
+        // Controllare i log di Firebase App Hosting per errori relativi all'esecuzione del flow Genkit.
+        // Possibili cause: API Google AI non abilitata, problemi di fatturazione, permessi del service account.
+        console.error("Failed to call generateHeroImage Server Action:", error);
+        setHeroImageUrl("https://placehold.co/1920x1080.png?text=Immagine+Momentaneamente+Non+Disponibile");
       } finally {
         setIsLoadingImage(false);
       }
@@ -60,6 +64,8 @@ export default function HomePage() {
               />
             )}
              {!heroImageUrl && !isLoadingImage && ( 
+              // Fallback se heroImageUrl è ancora null dopo il tentativo di caricamento (ma non c'è stato un errore esplicito nel catch)
+              // o se heroImageUrl è stato intenzionalmente impostato su una stringa vuota o null altrove.
               <Image
                 src="https://placehold.co/1920x1080.png?text=Tempus+Concierge"
                 alt="Placeholder Tempus Concierge"
