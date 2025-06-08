@@ -1,9 +1,8 @@
 
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useState } from 'react'; // Rimossa l'importazione duplicata di useState
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
@@ -30,7 +29,7 @@ const RegistrationFormSchema = z.object({
 
 type RegistrationFormData = z.infer<typeof RegistrationFormSchema>;
 
-export default function RegistrazionePage() {
+function RegistrazionePageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
@@ -176,3 +175,12 @@ export default function RegistrazionePage() {
     </div>
   );
 }
+
+export default function RegistrazionePage() {
+  return (
+    <Suspense fallback={<div>Caricamento pagina di registrazione...</div>}> {/* Aggiunto fallback */}
+      <RegistrazionePageContent />
+    </Suspense>
+  );
+}
+

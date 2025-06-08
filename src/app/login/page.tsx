@@ -1,31 +1,12 @@
 
 'use client';
-
-import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { useRouter, useSearchParams } from 'next/navigation';
-import Link from 'next/link';
-import { signInWithEmailAndPassword, type AuthError } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
-import Header from '@/components/layout/Header';
-import Footer from '@/components/layout/Footer';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { useToast } from '@/hooks/use-toast';
-import { Loader2, LogInIcon } from 'lucide-react';
-
-const LoginFormSchema = z.object({
-  email: z.string().email({ message: "Inserisci un indirizzo email valido." }),
-  password: z.string().min(1, { message: "La password è obbligatoria." }),
+import { Suspense, umessage: "La password è obbligatoria." }),
 });
 
 type LoginFormData = z.infer<typeof LoginFormSchema>;
 
-export default function LoginPage() {
+function LoginPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
@@ -149,5 +130,13 @@ export default function LoginPage() {
       </main>
       <Footer />
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}> {/* You can customize the fallback */}
+      <LoginPageContent />
+    </Suspense>
   );
 }

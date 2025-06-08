@@ -39,6 +39,7 @@ export async function getWatches(filterOptions?: { isNewArrival?: boolean }): Pr
   console.log(`Servizio (Firestore): getWatches chiamato con filtro:`, filterOptions);
   await delay(50);
   try {
+    await populateFirestoreWithMockDataIfNeeded(); // Ensure data is populated
     let q;
     if (filterOptions?.isNewArrival === true) {
       q = query(watchesCollection, where('isNewArrival', '==', true), orderBy('createdAt', 'desc'));
@@ -48,7 +49,6 @@ export async function getWatches(filterOptions?: { isNewArrival?: boolean }): Pr
     const querySnapshot = await getDocs(q);
     const watches = querySnapshot.docs.map(docSnap => {
         const watch = fromFirestore(docSnap);
-        // Log per ogni orologio recuperato, specificando isNewArrival e createdAt
         console.log(`Servizio (Firestore) - Orologio letto: ${watch.name}, ID: ${watch.id}, isNewArrival: ${watch.isNewArrival}, Prezzo: ${watch.price}, createdAt: ${watch.createdAt ? new Date(watch.createdAt).toISOString() : 'N/A'}`);
         return watch;
     });
@@ -56,7 +56,8 @@ export async function getWatches(filterOptions?: { isNewArrival?: boolean }): Pr
     return watches;
   } catch (error) {
     console.error("Errore in getWatches (Firestore): ", error);
-    throw error; 
+    // throw error; // Changed: Do not re-throw, return empty array instead
+    return []; // Return empty array on error
   }
 }
 
@@ -74,7 +75,8 @@ export async function getWatchById(id: string): Promise<Watch | null> {
         }
     } catch (error) {
         console.error(`Errore in getWatchById (Firestore) per ID ${id}: `, error);
-        throw error;
+        // throw error; // Changed: Do not re-throw, return null instead
+        return null; // Return null on error
     }
 }
 
@@ -104,7 +106,7 @@ export async function addWatchService(watchData: Omit<Watch, 'id'>): Promise<Wat
     return fromFirestore(newWatchSnapshot);
   } catch (error) {
     console.error("Errore DETTAGLIATO in addWatchService (Firestore): ", error);
-    throw error;
+    throw error; // Re-throw for actions to handle and provide user feedback
   }
 }
 
@@ -134,7 +136,7 @@ export async function updateWatchService(id: string, watchUpdate: Partial<Omit<W
     return null; 
   } catch (error) {
     console.error(`Errore DETTAGLIATO in updateWatchService (Firestore) per ID ${id}: `, error);
-    throw error;
+    throw error; // Re-throw for actions/pages to handle
   }
 }
 
@@ -146,7 +148,7 @@ export async function deleteWatchService(id: string): Promise<void> {
     console.log('Servizio (Firestore): deleteWatchService - orologio eliminato');
   } catch (error) {
     console.error(`Errore DETTAGLIATO in deleteWatchService (Firestore) per ID ${id}: `, error);
-    throw error;
+    throw error; // Re-throw for actions/pages to handle
   }
 }
 
@@ -170,7 +172,6 @@ export async function populateFirestoreWithMockDataIfNeeded(): Promise<void> {
                 delete dataToSave[key as keyof WatchFirestoreData];
             }
         });
-        // Decommentato per debug
         console.log(`--- Popolamento: Dati DA SALVARE per ${watch.name}:`, JSON.stringify(dataToSave, null, 2));
         const docRef = await addDoc(watchesCollection, dataToSave);
         console.log(`--- Popolamento: Orologio "${watch.name}" aggiunto con ID Firestore: ${docRef.id}`);
@@ -181,5 +182,6 @@ export async function populateFirestoreWithMockDataIfNeeded(): Promise<void> {
     }
   } catch (error) {
     console.error("ERRORE DURANTE IL POPOLAMENTO DI FIRESTORE con dati mock:", error);
+    // Not re-throwing here, as populate is a background task, allow app to continue if it fails.
   }
 }
