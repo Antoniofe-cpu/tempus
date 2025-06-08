@@ -108,7 +108,7 @@ export default function HomePage() {
       <main className="flex-grow">
         <section className="relative py-20 md:py-32 text-center overflow-hidden min-h-[400px] md:min-h-[500px] flex items-center justify-center">
           <div className="absolute inset-0 opacity-30">
-            <Image src="/patek-philippe-nautilus-5711_Y5PlWuc.webp" alt="Patek Philippe Nautilus sfondo" fill style={{ objectFit: 'cover' }} quality={80} priority data-ai-hint="patek philippe nautilus" />
+            <Image src="/patek-philippe-nautilus-5711_Y5PlWuc.jpeg" alt="Patek Philippe Nautilus sfondo" fill style={{ objectFit: 'cover' }} quality={80} priority data-ai-hint="patek philippe nautilus" />
           </div>
           <div className="container relative z-10 mx-auto px-4">
             <LucideWatchIcon className="mx-auto h-20 w-20 text-accent mb-6 animate-pulse" />
