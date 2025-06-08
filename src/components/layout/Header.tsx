@@ -1,14 +1,17 @@
+
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Menu, WatchIcon, Search, UserCircle, Briefcase } from 'lucide-react';
+import { Menu, WatchIcon, Search, Briefcase, UserPlus, LogIn } from 'lucide-react'; // Added UserPlus, LogIn
 import React from 'react';
 
 const navItems = [
   { href: '/', label: 'Home', icon: <WatchIcon className="h-5 w-5" /> },
   { href: '/occasioni', label: 'Occasioni', icon: <Search className="h-5 w-5" /> },
   { href: '/richiesta-personalizzata', label: 'Richiesta', icon: <Briefcase className="h-5 w-5" /> },
-  // { href: '/admin', label: 'Admin', icon: <UserCircle className="h-5 w-5" /> }, // Rimosso link Admin
+  { href: '/registrazione', label: 'Registrati', icon: <UserPlus className="h-5 w-5" /> },
+  // TODO: Aggiungere un link per il Login, che potrebbe portare a /login
+  // { href: '/login', label: 'Login', icon: <LogIn className="h-5 w-5" /> },
 ];
 
 export default function Header() {

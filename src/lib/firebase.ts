@@ -1,6 +1,8 @@
+
 // src/lib/firebase.ts
 import { initializeApp, getApps, getApp, type FirebaseApp } from 'firebase/app';
 import { getFirestore, type Firestore } from 'firebase/firestore';
+import { getAuth, type Auth } from 'firebase/auth'; // Added getAuth
 
 // Configurazione Firebase per il progetto "tempus-concierge"
 const firebaseConfig = {
@@ -22,5 +24,6 @@ if (!getApps().length) {
 }
 
 const db: Firestore = getFirestore(app);
+const auth: Auth = getAuth(app); // Initialize Firebase Auth
 
-export { app, db };
+export { app, db, auth }; // Export auth
