@@ -7,9 +7,9 @@ import Footer from '@/components/layout/Footer';
 import WatchCard from '@/components/WatchCard';
 import { Button } from '@/components/ui/button';
 import { FilterIcon, ArrowDownUpIcon, Loader2 } from 'lucide-react';
-import AiSuggestions from '@/components/AiSuggestions'; 
+// import AiSuggestions from '@/components/AiSuggestions'; // Rimosso import AiSuggestions
 import type { Watch } from '@/lib/types';
-import { getWatches } from '@/services/watchService'; // Ora usa il service
+import { getWatches } from '@/services/watchService'; 
 import { useToast } from "@/hooks/use-toast";
 import Link from 'next/link';
 
@@ -22,10 +22,7 @@ export default function OccasioniPage() {
   const fetchOccasioniWatches = useCallback(async () => {
     setIsLoading(true);
     try {
-      // La logica di popolamento è ora principalmente gestita dalla pagina admin/orologi.
-      // Se necessario, la si può richiamare anche qui o centralizzare.
-      // await populateFirestoreWithMockDataIfNeeded(); 
-      const data = await getWatches(); // Prende i dati da Firestore tramite il service
+      const data = await getWatches(); 
       setWatches(data);
     } catch (error) {
       console.error("Errore nel caricamento degli orologi per le occasioni (Firestore):", error);
@@ -90,15 +87,20 @@ export default function OccasioniPage() {
           </div>
         )}
         
+        {/* Sezione Suggerimenti AI rimossa */}
+        {/* 
         <section className="mt-16 pt-12 border-t border-border/40">
            <h2 className="font-headline text-3xl md:text-4xl font-bold text-center text-primary mb-8">
             Suggerimenti <span className="text-accent">dall'Esperto AI</span>
           </h2>
           <AiSuggestions initialCriteria="orologi di lusso popolari e di tendenza" context="occasioni" />
         </section>
+        */}
 
       </main>
       <Footer />
     </div>
   );
 }
+
+    

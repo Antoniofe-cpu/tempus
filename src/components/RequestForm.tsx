@@ -13,13 +13,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Slider } from "@/components/ui/slider";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { submitPersonalizedRequest, type FormState } from '@/lib/actions';
-import AiSuggestions from './AiSuggestions';
+// import AiSuggestions from './AiSuggestions'; // Rimosso import AiSuggestions
 import type { WatchType } from '@/lib/types';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { CheckCircle, AlertCircleIcon, Sparkles, SendIcon, Loader2, User } from "lucide-react";
+import { CheckCircle, AlertCircleIcon, SendIcon, Loader2 } from "lucide-react"; // Rimosso Sparkles
 import { useFormStatus } from 'react-dom';
 import { auth } from '@/lib/firebase';
-import { onAuthStateChanged } from 'firebase/auth';
+import { onAuthStateChanged, type User } from 'firebase/auth'; // Aggiunto type User
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 
@@ -31,7 +31,7 @@ const PersonalizedRequestSchema = z.object({
   desiredModel: z.string().optional(),
   budgetMin: z.coerce.number().min(0).optional().nullable(),
   budgetMax: z.coerce.number().min(0).optional().nullable(),
-  aiCriteria: z.string().max(500, {message: "La descrizione per AI non può superare i 500 caratteri."}).optional(),
+  aiCriteria: z.string().max(500, {message: "La descrizione per AI non può superare i 500 caratteri."}).optional(), // Mantenuto il nome del campo per retrocompatibilità action
   additionalNotes: z.string().max(1000, {message: "Le note aggiuntive non possono superare i 1000 caratteri."}).optional(),
 }).refine(data => {
   if (data.budgetMin !== null && data.budgetMin !== undefined &&
@@ -116,9 +116,8 @@ export default function RequestForm() {
 
   useEffect(() => {
     if (actionState.success) {
-      reset(); // Resetta il form RHF
-      setBudgetRange([budgetPresets[0].min, budgetPresets[0].max]); // Resetta lo slider del budget
-      // Non resettare lo stato di actionState qui, altrimenti il messaggio di successo scompare
+      reset(); 
+      setBudgetRange([budgetPresets[0].min, budgetPresets[0].max]); 
       toast({
         title: "Richiesta Inviata!",
         description: actionState.message,
@@ -131,7 +130,6 @@ export default function RequestForm() {
             variant: "destructive",
         });
         if (actionState.fields) {
-            // Ripristina i campi del form se l'action server ha fallito ma ha restituito i campi
             Object.entries(actionState.fields).forEach(([key, value]) => {
                 setValue(key as keyof PersonalizedRequestFormData, value as any, { shouldValidate: true });
             });
@@ -141,21 +139,20 @@ export default function RequestForm() {
 
 
   useEffect(() => {
-    if (authLoading) return; // Aspetta che l'autenticazione sia caricata
+    if (authLoading) return; 
 
     const pendingDataString = localStorage.getItem(LOCAL_STORAGE_KEY_DATA);
     const pendingRedirectPath = localStorage.getItem(LOCAL_STORAGE_KEY_REDIRECT);
     
     const wasRedirectedFromAuth = searchParams.get('fromForm') === 'true' && searchParams.get('origin') === 'requestForm';
 
-    if (currentUser) { // Utente è loggato
+    if (currentUser) { 
       if (pendingDataString && pendingRedirectPath === pathname && wasRedirectedFromAuth) {
         try {
           const pendingData = JSON.parse(pendingDataString) as PersonalizedRequestFormData;
           Object.keys(pendingData).forEach(key => {
             setValue(key as keyof PersonalizedRequestFormData, pendingData[key as keyof PersonalizedRequestFormData], { shouldValidate: true });
           });
-          // Precompila nome ed email dal profilo sovrascrivendo quelli salvati, se disponibili
           if (currentUser.displayName) setValue('name', currentUser.displayName, { shouldValidate: true });
           if (currentUser.email) setValue('email', currentUser.email, { shouldValidate: true });
 
@@ -165,12 +162,10 @@ export default function RequestForm() {
 
           localStorage.removeItem(LOCAL_STORAGE_KEY_DATA);
           localStorage.removeItem(LOCAL_STORAGE_KEY_REDIRECT);
-          // Rimuovi i query params specifici per evitare ripopolamento multiplo
           const newSearchParams = new URLSearchParams(searchParams.toString());
           newSearchParams.delete('fromForm');
           newSearchParams.delete('origin');
           router.replace(`${pathname}?${newSearchParams.toString()}`, { scroll: false });
-
 
           toast({ title: "Dati Ripristinati", description: "I dati della tua richiesta precedente sono stati ripristinati. Puoi inviarla ora." });
         } catch (e) {
@@ -179,12 +174,10 @@ export default function RequestForm() {
           localStorage.removeItem(LOCAL_STORAGE_KEY_REDIRECT);
         }
       } else {
-        // Utente loggato, nessun dato pendente, precompila nome ed email
         if (currentUser.displayName && !watch('name')) setValue('name', currentUser.displayName);
         if (currentUser.email && !watch('email')) setValue('email', currentUser.email);
       }
     }
-    // Se l'utente non è loggato, non fare nulla qui. La gestione avviene al submit.
   }, [currentUser, authLoading, setValue, pathname, router, toast, searchParams, watch]);
 
 
@@ -201,7 +194,6 @@ export default function RequestForm() {
       return;
     }
 
-    // Utente loggato, procedi con l'invio
     const formDataForAction = new FormData();
     Object.entries(data).forEach(([key, value]) => {
       if (value !== null && value !== undefined) {
@@ -210,8 +202,6 @@ export default function RequestForm() {
         }
       }
     });
-    // Chiamata esplicita all'action
-    // @ts-ignore prevState non è direttamente accessibile qui, ma useActionState lo gestisce
     formAction(formDataForAction);
   };
 
@@ -228,20 +218,9 @@ export default function RequestForm() {
     }
   };
 
-  const handleAiSuggestionClick = (suggestion: string) => {
-    const currentNotes = watch("additionalNotes") || "";
-    const newNotes = `${currentNotes}\n- Suggerimento AI: ${suggestion}`.trim();
-    setValue("additionalNotes", newNotes, { shouldValidate: true });
-  };
-
-  const handleTriggerAiSuggestions = useCallback(() => {
-    const criteria = watch("aiCriteria");
-    if (typeof (window as any).triggerAiSuggestionsGlobal === 'function') {
-      (window as any).triggerAiSuggestionsGlobal(criteria || '');
-    } else {
-      console.warn("triggerAiSuggestionsGlobal function not found on window object.");
-    }
-  }, [watch]);
+  // Funzione handleAiSuggestionClick e handleTriggerAiSuggestions rimosse
+  // const handleAiSuggestionClick = (suggestion: string) => { ... };
+  // const handleTriggerAiSuggestions = useCallback(() => { ... }, [watch]);
 
   if (authLoading) {
     return (
@@ -262,7 +241,7 @@ export default function RequestForm() {
       </CardHeader>
       <CardContent>
         <form
-          onSubmit={handleSubmit(handleActualSubmit)} // Chiamata alla funzione di gestione submit
+          onSubmit={handleSubmit(handleActualSubmit)}
           className="space-y-8"
         >
           {actionState.message && !actionState.success && (
@@ -343,10 +322,9 @@ export default function RequestForm() {
               <Controller
                 name="budgetMin" 
                 control={control}
-                render={({ field }) => ( // field.value qui è budgetMin
+                render={({ field }) => ( 
                   <Select
                     onValueChange={handlePresetChange}
-                    // Determina il valore selezionato per il preset
                     value={budgetPresets.find(p => p.min === budgetRange[0] && p.max === budgetRange[1]) 
                            ? `${budgetRange[0]}-${budgetRange[1]}` 
                            : "custom"}
@@ -383,20 +361,19 @@ export default function RequestForm() {
           </div>
 
           <div>
-            <Label htmlFor="aiCriteria" className="text-foreground/80">Descrivi la tua richiesta (per suggerimenti AI)</Label>
+            <Label htmlFor="aiCriteria" className="text-foreground/80">Descrivi la tua richiesta</Label> {/* Etichetta modificata */}
             <Textarea
-              id="aiCriteria"
+              id="aiCriteria" // Mantenuto id e register name per retrocompatibilità con l'action
               {...register("aiCriteria")}
               placeholder="Es. Cerco un orologio sportivo elegante, resistente all'acqua, con bracciale in acciaio, quadrante blu, sotto i 10.000€"
               className="mt-1 min-h-[100px] bg-input border-border focus:border-accent focus:ring-accent"
             />
              {errors.aiCriteria && <p className="text-sm text-destructive mt-1">{errors.aiCriteria.message}</p>}
-            <Button type="button" variant="outline" onClick={handleTriggerAiSuggestions} className="mt-2 border-accent text-accent hover:bg-accent hover:text-accent-foreground">
-              <Sparkles className="mr-2 h-4 w-4" /> Ottieni Suggerimenti AI
-            </Button>
+            {/* Bottone "Ottieni Suggerimenti AI" rimosso */}
           </div>
 
-          <AiSuggestions onSuggestionClick={handleAiSuggestionClick} context="form" triggerFetch={handleTriggerAiSuggestions} />
+          {/* Componente AiSuggestions rimosso */}
+          {/* <AiSuggestions onSuggestionClick={handleAiSuggestionClick} context="form" triggerFetch={handleTriggerAiSuggestions} /> */}
 
           <div>
             <Label htmlFor="additionalNotes" className="text-foreground/80">Note Aggiuntive (Opzionale)</Label>
