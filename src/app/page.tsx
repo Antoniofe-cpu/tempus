@@ -9,7 +9,7 @@ import Image from 'next/image';
 import { ArrowRight, GemIcon, SearchIcon, ShieldCheckIcon, Loader2 } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
 import { generateHeroImage } from '@/ai/flows/generate-hero-image-flow';
-import { WatchIcon } from 'lucide-react'; // Assicurati che WatchIcon sia importato
+import { WatchIcon } from 'lucide-react';
 
 export default function HomePage() {
   const [heroImageUrl, setHeroImageUrl] = useState<string | null>(null);
@@ -76,7 +76,7 @@ export default function HomePage() {
               Benvenuto in <span className="text-accent">Tempus Concierge</span>
             </h1>
             <p className="text-xl md:text-2xl text-foreground/80 max-w-3xl mx-auto mb-10">
-              Il tuo portale esclusivo per la ricerca e la consulenza di orologi da collezione e di lusso. Realizziamo la tua passione, orologio dopo orologio.
+              Il tuo portale esclusivo per la ricerca e la consulenza di orologi da collezione e di lusso. Realizziamo i tuoi sogni, orologio dopo orologio.
             </p>
             <div className="space-x-0 space-y-4 sm:space-y-0 sm:space-x-4">
               <Button asChild size="lg" className="bg-accent hover:bg-accent/90 text-accent-foreground font-semibold group">
