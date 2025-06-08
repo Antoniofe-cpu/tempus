@@ -1,25 +1,23 @@
 
 'use client';
 
+console.log('HomePage.tsx version: 2024-07-27 10:00 UTC'); // DEBUG LOG
+
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowRight, GemIcon, SearchIcon, ShieldCheckIcon, WatchIcon as LucideWatchIcon } from 'lucide-react'; // Renamed to avoid conflict
-import React from 'react'; // Removed unused useState, useEffect
-// Removed generateHeroImage import and Loader2 as AI image generation is replaced by static
+import { ArrowRight, GemIcon, SearchIcon, ShieldCheckIcon, WatchIcon as LucideWatchIcon } from 'lucide-react';
+import React from 'react';
 
 export default function HomePage() {
-  // Removed useState for heroImageUrl and isLoadingImage
-
   return (
     <div className="flex flex-col min-h-screen bg-background">
       <Header />
       <main className="flex-grow">
         <section className="relative py-20 md:py-32 text-center overflow-hidden min-h-[400px] md:min-h-[500px] flex items-center justify-center">
           <div className="absolute inset-0 opacity-30">
-            {/* Replaced AI generated image with a static placeholder */}
             <Image
               src="https://placehold.co/1920x1080.png?text=Tempus+Concierge+Collection"
               alt="Servizio esclusivo Tempus Concierge per orologi di lusso"
