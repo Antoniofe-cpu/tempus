@@ -1,24 +1,37 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link'; // Import aggiunto qui
-import { onAuthStateChanged, type User } from 'firebase/auth';
+import Link from 'next/link';
+import { onAuthStateChanged, type User, updateProfile, deleteUser } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, UserCircle, Mail, Edit3, ListChecks, AlertTriangleIcon, Trash2 } from 'lucide-react';
-import type { PersonalizedRequest, RequestStatus } from '@/lib/types'; // Importa PersonalizedRequest
-import { getRequestsByEmail } from '@/services/requestService'; // Importa il nuovo servizio
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Loader2, UserCircle, Mail, Edit3, ListChecks, AlertTriangleIcon, Trash2, Save, X } from 'lucide-react';
+import type { PersonalizedRequest, RequestStatus } from '@/lib/types';
+import { getRequestsByEmail } from '@/services/requestService';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 const getStatusBadgeStyle = (status?: RequestStatus): string => {
   switch (status) {
@@ -43,12 +56,19 @@ export default function ProfiloPage() {
   const [isLoadingRequests, setIsLoadingRequests] = useState(false);
   const [requestsError, setRequestsError] = useState<string | null>(null);
 
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [displayName, setDisplayName] = useState('');
+  const [isUpdatingName, setIsUpdatingName] = useState(false);
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       if (!currentUser) {
         router.push('/login?redirect=/profilo');
       } else {
         setUser(currentUser);
+        setDisplayName(currentUser.displayName || '');
         if (currentUser.email) {
           fetchUserRequests(currentUser.email);
         }
@@ -66,31 +86,70 @@ export default function ProfiloPage() {
       setUserRequests(requests);
     } catch (error) {
       console.error("Errore nel caricamento delle richieste utente:", error);
-      setRequestsError("Impossibile caricare le tue richieste al momento.");
+      const errorMessage = (error as Error).message || "Impossibile caricare le tue richieste al momento.";
+      setRequestsError(errorMessage);
       toast({
         title: "Errore Richieste",
-        description: "Non è stato possibile caricare le tue richieste.",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
       setIsLoadingRequests(false);
     }
   };
-  
-  const handleModifyProfile = () => {
-    toast({
-      title: "Funzione non disponibile",
-      description: "La modifica del profilo non è ancora implementata.",
-      variant: "default" 
-    });
+
+  const handleUpdateName = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!user || !displayName.trim()) {
+      toast({ title: "Errore", description: "Il nome non può essere vuoto.", variant: "destructive" });
+      return;
+    }
+    if (displayName.trim() === user.displayName) {
+      setIsEditingName(false);
+      return;
+    }
+
+    setIsUpdatingName(true);
+    try {
+      await updateProfile(user, { displayName: displayName.trim() });
+      // Aggiorna lo stato locale dell'utente per riflettere il cambiamento
+      setUser(auth.currentUser); 
+      toast({ title: "Successo", description: "Nome aggiornato con successo." });
+      setIsEditingName(false);
+    } catch (error) {
+      console.error("Errore durante l'aggiornamento del nome:", error);
+      toast({ title: "Errore", description: "Impossibile aggiornare il nome.", variant: "destructive" });
+    } finally {
+      setIsUpdatingName(false);
+    }
   };
 
-  const handleDeleteAccount = () => {
-     toast({
-      title: "Funzione non disponibile",
-      description: "L'eliminazione dell'account non è ancora implementata.",
-      variant: "destructive" 
-    });
+  const handleDeleteAccount = async () => {
+    if (!user) return;
+    setIsDeletingAccount(true);
+    try {
+      await deleteUser(user);
+      toast({ title: "Account Eliminato", description: "Il tuo account è stato eliminato con successo." });
+      router.push('/'); // onAuthStateChanged dovrebbe comunque gestire il redirect se l'utente diventa null
+    } catch (error: any) {
+      console.error("Errore durante l'eliminazione dell'account:", error);
+      if (error.code === 'auth/requires-recent-login') {
+        toast({
+          title: "Azione Richiede Login Recente",
+          description: "Per eliminare il tuo account, per favore effettua nuovamente il login e riprova.",
+          variant: "destructive",
+          duration: 7000,
+        });
+      } else {
+        toast({
+          title: "Errore Eliminazione Account",
+          description: error.message || "Impossibile eliminare l'account.",
+          variant: "destructive",
+        });
+      }
+    } finally {
+      setIsDeletingAccount(false);
+    }
   };
 
 
@@ -132,33 +191,78 @@ export default function ProfiloPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <h3 className="font-semibold text-lg text-foreground/90">Informazioni Personali</h3>
                 <div className="p-4 border rounded-md bg-muted/30 space-y-3">
                   <div className="flex items-center">
                     <UserCircle className="h-5 w-5 mr-3 text-muted-foreground flex-shrink-0" />
-                    <p><span className="font-medium text-foreground/80">Nome:</span> {user.displayName || 'Non specificato'}</p>
+                     {isEditingName ? (
+                        <form onSubmit={handleUpdateName} className="flex items-center gap-2 w-full">
+                          <Label htmlFor="displayName" className="sr-only">Nome Visualizzato</Label>
+                          <Input
+                            id="displayName"
+                            type="text"
+                            value={displayName}
+                            onChange={(e) => setDisplayName(e.target.value)}
+                            className="h-9 flex-grow bg-input"
+                            disabled={isUpdatingName}
+                          />
+                          <Button type="submit" size="icon" variant="ghost" className="text-green-500 hover:text-green-600" disabled={isUpdatingName}>
+                            {isUpdatingName ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                            <span className="sr-only">Salva Nome</span>
+                          </Button>
+                          <Button type="button" size="icon" variant="ghost" className="text-destructive hover:text-destructive/80" onClick={() => {setIsEditingName(false); setDisplayName(user.displayName || '');}} disabled={isUpdatingName}>
+                            <X className="h-4 w-4" />
+                            <span className="sr-only">Annulla</span>
+                          </Button>
+                        </form>
+                      ) : (
+                        <div className="flex items-center justify-between w-full">
+                           <p><span className="font-medium text-foreground/80">Nome:</span> {user.displayName || 'Non specificato'}</p>
+                           <Button variant="ghost" size="icon" className="h-7 w-7 text-primary hover:text-accent" onClick={() => setIsEditingName(true)}>
+                             <Edit3 className="h-4 w-4" />
+                             <span className="sr-only">Modifica Nome</span>
+                           </Button>
+                        </div>
+                      )}
                   </div>
                   <div className="flex items-center">
                     <Mail className="h-5 w-5 mr-3 text-muted-foreground flex-shrink-0" />
                     <p><span className="font-medium text-foreground/80">Email:</span> {user.email}</p>
                   </div>
                 </div>
-              </div>
-              
-              <div className="space-y-3">
-                <Button variant="outline" className="w-full sm:w-auto border-accent text-accent hover:bg-accent/10" onClick={handleModifyProfile}>
-                  <Edit3 className="mr-2 h-4 w-4" /> Modifica Profilo
-                </Button>
-                <p className="text-xs text-muted-foreground">La modifica del nome visualizzato e della password sarà disponibile qui.</p>
+                <p className="text-xs text-muted-foreground">La modifica della password non è ancora implementata qui. Puoi usare il flusso "Password Dimenticata" dalla pagina di login.</p>
               </div>
               
               <div className="pt-6 border-t border-border/40">
-                <h3 className="font-semibold text-lg text-foreground/90 mb-3">Impostazioni Account</h3>
-                 <Button variant="link" className="p-0 h-auto text-destructive hover:underline" onClick={handleDeleteAccount}>
-                   <Trash2 className="mr-2 h-4 w-4" /> Elimina Account
-                </Button>
-                 <p className="text-xs text-muted-foreground mt-1">Questa azione è permanente e non può essere annullata.</p>
+                <h3 className="font-semibold text-lg text-foreground/90 mb-2">Impostazioni Account</h3>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="destructive" className="w-full sm:w-auto" disabled={isDeletingAccount}>
+                      {isDeletingAccount ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
+                      {isDeletingAccount ? "Eliminazione..." : "Elimina Account"}
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent className="bg-card border-border/60">
+                    <AlertDialogHeader>
+                      <AlertDialogTitle className="text-primary">Sei assolutamente sicuro?</AlertDialogTitle>
+                      <AlertDialogDescription className="text-muted-foreground">
+                        Questa azione non può essere annullata. Il tuo account e tutti i dati associati verranno eliminati permanentemente.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Annulla</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={handleDeleteAccount}
+                        className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+                        disabled={isDeletingAccount}
+                      >
+                        Sì, Elimina Account
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+                 <p className="text-xs text-muted-foreground mt-2">Se riscontri problemi durante l'eliminazione, prova a fare logout e login di nuovo.</p>
               </div>
             </CardContent>
           </Card>
@@ -241,5 +345,4 @@ export default function ProfiloPage() {
     </div>
   );
 }
-
     
