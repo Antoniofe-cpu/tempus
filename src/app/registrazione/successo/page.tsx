@@ -26,15 +26,14 @@ export default function RegistrazioneSuccessoPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-foreground/80">
-              Ora puoi esplorare le nostre occasioni esclusive o inviare una richiesta personalizzata.
-              Se non sei stato reindirizzato automaticamente, puoi procedere al login.
+              Ora puoi esplorare le nostre occasioni esclusive, inviare una richiesta personalizzata o visitare il tuo profilo.
             </p>
             <div className="flex flex-col sm:flex-row justify-center gap-4">
               <Button asChild size="lg" className="bg-accent hover:bg-accent/90 text-accent-foreground">
                 <Link href="/">Torna alla Home</Link>
               </Button>
               <Button asChild variant="outline" size="lg" className="border-primary text-primary hover:bg-primary/10">
-                <Link href="/login">Vai al Login</Link> 
+                <Link href="/profilo">Vai al Profilo</Link> 
               </Button>
             </div>
           </CardContent>
@@ -44,3 +43,4 @@ export default function RegistrazioneSuccessoPage() {
     </div>
   );
 }
+

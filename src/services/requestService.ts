@@ -15,6 +15,7 @@ import {
   Timestamp,
   orderBy,
   query,
+  where, // Aggiunto where
   serverTimestamp
 } from 'firebase/firestore';
 
@@ -43,6 +44,26 @@ export async function getRequests(): Promise<PersonalizedRequest[]> {
   }
 }
 
+export async function getRequestsByEmail(email: string): Promise<PersonalizedRequest[]> {
+  if (!email) {
+    return [];
+  }
+  try {
+    const requestsCollection = collection(db, REQUESTS_COLLECTION);
+    const q = query(
+      requestsCollection, 
+      where("email", "==", email), 
+      orderBy('createdAt', 'desc')
+    );
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map(fromFirestore);
+  } catch (error) {
+    console.error(`Errore in getRequestsByEmail (Firestore) per email ${email}: `, error);
+    throw new Error(`Impossibile caricare le richieste per l'utente: ${(error as Error).message}`);
+  }
+}
+
+
 export async function getRequestById(id: string): Promise<PersonalizedRequest | null> {
   try {
     const requestDocRef = doc(db, REQUESTS_COLLECTION, id);
@@ -61,6 +82,17 @@ export async function addRequestService(
   requestData: Omit<PersonalizedRequest, 'id' | 'createdAt' | 'updatedAt'> & { status: RequestStatus }
 ): Promise<PersonalizedRequest> {
   try {
+    // Includi userId se disponibile e se vuoi salvarlo
+    // const user = auth.currentUser; // Se questa action fosse un client component con accesso a `auth`
+    // const userId = user ? user.uid : undefined; 
+    // const dataToSave: Omit<PersonalizedRequestFirestoreData, 'id' | 'updatedAt'> = {
+    //   ...requestData,
+    //   userId, // Aggiungi userId qui se vuoi salvarlo
+    //   budgetMin: requestData.budgetMin ?? undefined,
+    //   budgetMax: requestData.budgetMax ?? undefined,
+    //   createdAt: Timestamp.now(),
+    // };
+
     const dataToSave: Omit<PersonalizedRequestFirestoreData, 'id' | 'updatedAt'> = {
       ...requestData,
       budgetMin: requestData.budgetMin ?? undefined,
@@ -83,10 +115,9 @@ export async function updateRequestService(
 ): Promise<PersonalizedRequest | null> {
   try {
     const requestRef = doc(db, REQUESTS_COLLECTION, id);
-    // Converti date a Timestamp se presenti
     const dataToUpdate: Partial<PersonalizedRequestFirestoreData> = {
       ...requestUpdateData,
-      updatedAt: serverTimestamp() as Timestamp, // Usa serverTimestamp per aggiornare
+      updatedAt: serverTimestamp() as Timestamp, 
     };
     if (requestUpdateData.budgetMin === null) dataToUpdate.budgetMin = undefined;
     if (requestUpdateData.budgetMax === null) dataToUpdate.budgetMax = undefined;
@@ -109,3 +140,4 @@ export async function deleteRequestService(id: string): Promise<void> {
     throw new Error(`Impossibile eliminare la richiesta: ${(error as Error).message}`);
   }
 }
+
