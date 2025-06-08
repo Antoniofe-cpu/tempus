@@ -21,33 +21,28 @@ export interface ServiceCard {
 
 const COLLECTION_NAME = 'serviceCards';
 
-// Default service card data
+// Default service card data - Rimosso iconUrl per usare fallback
 const defaultServiceCards: Omit<ServiceCard, 'id'>[] = [
   {
     title: 'Compra',
     description: 'Trova il tuo prossimo orologio da sogno.',
-    // iconUrl: '/icons/buy-icon.svg', // Removed to prevent 404
     link: '/shop',
   },
   {
     title: 'Vendi',
     description: 'Valuta e vendi il tuo orologio con facilità.',
-    // iconUrl: '/icons/sell-icon.svg', // Removed to prevent 404
-    link: '/vendi', 
+    link: '/vendi',
   },
   {
     title: 'Cerca',
     description: 'Richiedi una ricerca personalizzata per un pezzo raro.',
-    // iconUrl: '/icons/search-icon.svg', // Removed to prevent 404
     link: '/richiesta-personalizzata',
   },
   {
     title: 'Ripara',
     description: 'Affidati ai nostri esperti per la cura del tuo orologio.',
-    // iconUrl: '/icons/repair-icon.svg', // Removed to prevent 404
-    link: '/ripara', 
+    link: '/ripara',
   },
-  // Add more default cards as needed
 ];
 
 
