@@ -2,10 +2,11 @@
 'use server';
 
 import { z } from 'zod';
-import type { PersonalizedRequest } from './types';
+import type { PersonalizedRequest, RepairRequestStatus, AllRepairRequestStatuses as AllRepairRequestStatusesType } from './types'; // Modificato import
 import { suggestWatches as genAISuggestWatches, type SuggestWatchesInput, type SuggestWatchesOutput } from '@/ai/flows/suggest-watches';
 import { fetchWatchNews as genAIFetchWatchNews, type FetchWatchNewsOutput } from '@/ai/flows/fetch-watch-news-flow';
-import { addRequestService } from '@/services/requestService'; // Importa il servizio corretto
+import { addRequestService } from '@/services/requestService';
+import { addRepairRequestService } from '@/services/repairRequestService'; // Importato il nuovo servizio
 
 // Schema for personalized request form validation
 const PersonalizedRequestSchema = z.object({
@@ -35,7 +36,7 @@ export type FormState = {
   fields?: Record<string, string>;
   issues?: string[];
   success: boolean;
-  requestId?: string; // Aggiunto per poter passare l'ID della richiesta creata
+  requestId?: string; 
 };
 
 export async function submitPersonalizedRequest(
@@ -64,15 +65,14 @@ export async function submitPersonalizedRequest(
     watchType: parsed.data.watchType,
     desiredBrand: parsed.data.desiredBrand,
     desiredModel: parsed.data.desiredModel,
-    budgetMin: parsed.data.budgetMin ?? undefined, // Converti null in undefined se necessario per il servizio
-    budgetMax: parsed.data.budgetMax ?? undefined, // Converti null in undefined se necessario per il servizio
+    budgetMin: parsed.data.budgetMin ?? undefined, 
+    budgetMax: parsed.data.budgetMax ?? undefined, 
     aiCriteria: parsed.data.aiCriteria,
     additionalNotes: parsed.data.additionalNotes,
-    status: 'Nuova' as const, // Assicurati che lo status sia del tipo corretto
+    status: 'Nuova' as const, 
   };
 
   try {
-    // Salva la richiesta usando il servizio, che gestisce i Timestamp
     const newRequest = await addRequestService(requestDataToSave);
     return { 
       message: `Grazie ${parsed.data.name}, la tua richiesta è stata inviata con successo! ID Richiesta: ${newRequest.id}. Ti contatteremo presto.`, 
@@ -100,7 +100,6 @@ export async function getAiWatchSuggestions(criteria: string): Promise<SuggestWa
     return result;
   } catch (error) {
     console.error("Error getting AI suggestions:", error);
-    // Provide a user-friendly error message in Italian
     return { suggestions: ["Si è verificato un errore nel recuperare i suggerimenti. Riprova più tardi o contatta l'assistenza."] };
   }
 }
@@ -108,7 +107,6 @@ export async function getAiWatchSuggestions(criteria: string): Promise<SuggestWa
 export async function getWatchNews(): Promise<FetchWatchNewsOutput> {
   try {
     const result = await genAIFetchWatchNews();
-    // Assicurati che newsItems sia sempre un array, anche se l'output del flow è null o undefined
     return result && result.newsItems ? result : { newsItems: [] };
   } catch (error) {
     console.error("Error getting AI watch news:", error);
@@ -120,3 +118,65 @@ export async function getWatchNews(): Promise<FetchWatchNewsOutput> {
     };
   }
 }
+
+// Schema e Action per Richiesta di Riparazione
+const RepairRequestSchema = z.object({
+  name: z.string().min(2, { message: "Il nome deve contenere almeno 2 caratteri." }),
+  email: z.string().email({ message: "Inserisci un indirizzo email valido." }),
+  phone: z.string().optional().refine(val => !val || /^[+]?[0-9\s-()]*$/.test(val), { message: "Numero di telefono non valido."}),
+  watchBrand: z.string().min(1, { message: "La marca dell'orologio è obbligatoria." }),
+  watchModel: z.string().min(1, { message: "Il modello dell'orologio è obbligatorio." }),
+  watchSerialNumber: z.string().optional(),
+  problemDescription: z.string().min(10, { message: "Descrivi il problema in almeno 10 caratteri." }),
+});
+
+export async function submitRepairRequest(
+  prevState: FormState,
+  data: FormData
+): Promise<FormState> {
+  const formData = Object.fromEntries(data);
+  const parsed = RepairRequestSchema.safeParse(formData);
+
+  if (!parsed.success) {
+    const issues = parsed.error.issues.map((issue) => {
+      return issue.path.length > 0 ? `${issue.path.join('.')}: ${issue.message}` : issue.message;
+    });
+    console.error('Validation errors (Repair Request):', parsed.error.flatten());
+    return {
+      message: "Errore nella validazione dei dati. Controlla i campi e i messaggi qui sotto.",
+      fields: formData as Record<string, string>,
+      issues,
+      success: false,
+    };
+  }
+
+  const requestDataToSave = {
+    name: parsed.data.name,
+    email: parsed.data.email,
+    phone: parsed.data.phone,
+    watchBrand: parsed.data.watchBrand,
+    watchModel: parsed.data.watchModel,
+    watchSerialNumber: parsed.data.watchSerialNumber,
+    problemDescription: parsed.data.problemDescription,
+    status: 'Nuova' as RepairRequestStatus,
+  };
+
+  try {
+    const newRequest = await addRepairRequestService(requestDataToSave);
+    return { 
+      message: `Grazie ${parsed.data.name}, la tua richiesta di riparazione (ID: ${newRequest.id}) è stata inviata! Ti contatteremo al più presto.`, 
+      success: true,
+      requestId: newRequest.id
+    };
+  } catch (error) {
+    console.error('Errore nel salvataggio della richiesta di riparazione:', error);
+    return {
+      message: `Si è verificato un errore durante l'invio della richiesta di riparazione: ${(error as Error).message}. Riprova più tardi.`,
+      fields: formData as Record<string, string>,
+      success: false,
+    };
+  }
+}
+
+// Placeholder per la sezione Vendita
+// export async function submitSellRequest(...) { ... }

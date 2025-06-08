@@ -2,7 +2,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation'; // Aggiunto useRouter
+import { usePathname, useRouter } from 'next/navigation'; 
 import { cn } from '@/lib/utils';
 import {
   Sidebar,
@@ -15,15 +15,17 @@ import {
   SidebarTrigger,
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
-import { WatchIcon, LayoutDashboard, ListChecks, Package, Users, Settings, LogOut } from 'lucide-react';
-import { signOut } from 'firebase/auth'; // Aggiunto signOut
-import { auth } from '@/lib/firebase'; // Aggiunto auth
-import { useToast } from '@/hooks/use-toast'; // Aggiunto useToast
+import { WatchIcon, LayoutDashboard, ListChecks, Package, Users, Settings, LogOut, Wrench, DollarSign } from 'lucide-react'; // Aggiunto Wrench, DollarSign
+import { signOut } from 'firebase/auth'; 
+import { auth } from '@/lib/firebase'; 
+import { useToast } from '@/hooks/use-toast'; 
 
 const adminNavItems = [
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/admin/richieste', label: 'Richieste Clienti', icon: ListChecks },
   { href: '/admin/orologi', label: 'Gestione Orologi', icon: Package },
+  { href: '/admin/riparazioni', label: 'Gestione Riparazioni', icon: Wrench }, // Nuovo
+  { href: '/admin/vendite', label: 'Gestione Vendite', icon: DollarSign }, // Nuovo
   { href: '/admin/utenti', label: 'Gestione Utenti', icon: Users },
   { href: '/admin/impostazioni', label: 'Impostazioni', icon: Settings },
 ];
@@ -37,7 +39,7 @@ export default function AdminSidebar() {
     try {
       await signOut(auth);
       toast({ title: 'Logout Effettuato', description: 'Sei stato disconnesso dall\'area admin.' });
-      router.push('/'); // Reindirizza alla homepage dopo il logout dall'admin
+      router.push('/'); 
     } catch (error) {
       console.error('Errore durante il logout (admin):', error);
       toast({ title: 'Errore Logout', description: 'Non è stato possibile effettuare il logout.', variant: 'destructive' });
@@ -81,7 +83,7 @@ export default function AdminSidebar() {
            <Button 
             variant="ghost" 
             className="w-full justify-start text-sidebar-foreground/80 hover:text-destructive hover:bg-destructive/10 group-data-[collapsible=icon]:justify-center"
-            onClick={handleLogout} // Aggiunto onClick per il logout
+            onClick={handleLogout} 
            >
             <LogOut className="mr-2 h-5 w-5 group-data-[collapsible=icon]:mr-0" />
             <span className="group-data-[collapsible=icon]:hidden">Logout</span>
