@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation'; // Aggiunto useSearchParams
 import Link from 'next/link';
 import { signInWithEmailAndPassword, type AuthError } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
@@ -20,13 +20,14 @@ import { Loader2, LogInIcon } from 'lucide-react';
 
 const LoginFormSchema = z.object({
   email: z.string().email({ message: "Inserisci un indirizzo email valido." }),
-  password: z.string().min(1, { message: "La password è obbligatoria." }), // Min 1 perché Firebase gestisce la lunghezza minima
+  password: z.string().min(1, { message: "La password è obbligatoria." }),
 });
 
 type LoginFormData = z.infer<typeof LoginFormSchema>;
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams(); // Per ottenere il parametro redirect
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
 
@@ -45,9 +46,13 @@ export default function LoginPage() {
         variant: "default",
       });
       reset();
-      router.push('/'); // Reindirizza alla homepage dopo il login
-      // Potresti voler reindirizzare a /admin se l'utente è un admin, o a un profilo utente
-      // Questo richiederà logica aggiuntiva per controllare i ruoli utente.
+      
+      const redirectUrl = searchParams.get('redirect');
+      if (redirectUrl) {
+        router.push(redirectUrl); // Reindirizza all'URL specificato o alla dashboard
+      } else {
+        router.push('/'); // Reindirizza alla homepage se non c'è redirect
+      }
 
     } catch (error) {
       const authError = error as AuthError;
@@ -96,7 +101,12 @@ export default function LoginPage() {
                 {errors.email && <p className="text-sm text-destructive mt-1">{errors.email.message}</p>}
               </div>
               <div>
-                <Label htmlFor="password" className="text-foreground/80">Password</Label>
+                <div className="flex justify-between items-center">
+                  <Label htmlFor="password" className="text-foreground/80">Password</Label>
+                  <Link href="/password-reset" className="text-xs text-accent hover:underline">
+                    Password dimenticata?
+                  </Link>
+                </div>
                 <Input 
                   id="password" 
                   type="password" 
@@ -126,7 +136,6 @@ export default function LoginPage() {
                 Registrati
               </Link>
             </p>
-            {/* TODO: Aggiungere link "Password dimenticata?" */}
           </CardFooter>
         </Card>
       </main>

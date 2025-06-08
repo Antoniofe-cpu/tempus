@@ -2,7 +2,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation'; // Aggiunto useRouter
 import { cn } from '@/lib/utils';
 import {
   Sidebar,
@@ -16,6 +16,9 @@ import {
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { WatchIcon, LayoutDashboard, ListChecks, Package, Users, Settings, LogOut } from 'lucide-react';
+import { signOut } from 'firebase/auth'; // Aggiunto signOut
+import { auth } from '@/lib/firebase'; // Aggiunto auth
+import { useToast } from '@/hooks/use-toast'; // Aggiunto useToast
 
 const adminNavItems = [
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
@@ -27,6 +30,19 @@ const adminNavItems = [
 
 export default function AdminSidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const { toast } = useToast();
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      toast({ title: 'Logout Effettuato', description: 'Sei stato disconnesso dall\'area admin.' });
+      router.push('/'); // Reindirizza alla homepage dopo il logout dall'admin
+    } catch (error) {
+      console.error('Errore durante il logout (admin):', error);
+      toast({ title: 'Errore Logout', description: 'Non è stato possibile effettuare il logout.', variant: 'destructive' });
+    }
+  };
 
   return (
       <Sidebar collapsible="icon" className="border-r border-sidebar-border bg-sidebar">
@@ -62,7 +78,11 @@ export default function AdminSidebar() {
           </SidebarMenu>
         </SidebarContent>
         <SidebarFooter className="p-4 mt-auto border-t border-sidebar-border">
-           <Button variant="ghost" className="w-full justify-start text-sidebar-foreground/80 hover:text-destructive hover:bg-destructive/10 group-data-[collapsible=icon]:justify-center">
+           <Button 
+            variant="ghost" 
+            className="w-full justify-start text-sidebar-foreground/80 hover:text-destructive hover:bg-destructive/10 group-data-[collapsible=icon]:justify-center"
+            onClick={handleLogout} // Aggiunto onClick per il logout
+           >
             <LogOut className="mr-2 h-5 w-5 group-data-[collapsible=icon]:mr-0" />
             <span className="group-data-[collapsible=icon]:hidden">Logout</span>
           </Button>

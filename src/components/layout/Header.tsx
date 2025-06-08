@@ -2,15 +2,14 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Menu, WatchIcon, Search, Briefcase, UserPlus, LogIn } from 'lucide-react'; // Added LogIn
+import { Menu, WatchIcon, Search, Briefcase } from 'lucide-react'; 
 import React from 'react';
+import AuthNavLinks from './AuthNavLinks'; // Importa il nuovo componente
 
-const navItems = [
-  { href: '/', label: 'Home', icon: <WatchIcon className="h-5 w-5" /> },
-  { href: '/occasioni', label: 'Occasioni', icon: <Search className="h-5 w-5" /> },
-  { href: '/richiesta-personalizzata', label: 'Richiesta', icon: <Briefcase className="h-5 w-5" /> },
-  { href: '/registrazione', label: 'Registrati', icon: <UserPlus className="h-5 w-5" /> },
-  { href: '/login', label: 'Login', icon: <LogIn className="h-5 w-5" /> },
+const mainNavItems = [
+  { href: '/', label: 'Home', icon: <WatchIcon className="h-5 w-5 text-accent" /> },
+  { href: '/occasioni', label: 'Occasioni', icon: <Search className="h-5 w-5 text-accent" /> },
+  { href: '/richiesta-personalizzata', label: 'Richiesta', icon: <Briefcase className="h-5 w-5 text-accent" /> },
 ];
 
 export default function Header() {
@@ -23,7 +22,7 @@ export default function Header() {
         </Link>
 
         <nav className="hidden md:flex items-center space-x-6 text-sm font-medium">
-          {navItems.map((item) => (
+          {mainNavItems.map((item) => (
             <Link
               key={item.label}
               href={item.href}
@@ -32,6 +31,7 @@ export default function Header() {
               {item.label}
             </Link>
           ))}
+          <AuthNavLinks /> {/* Link di autenticazione per desktop */}
         </nav>
 
         <div className="md:hidden">
@@ -49,16 +49,17 @@ export default function Header() {
                    <span className="font-headline text-xl font-bold text-accent">Tempus Concierge</span>
                 </Link>
                 <nav className="flex flex-col space-y-4">
-                  {navItems.map((item) => (
+                  {mainNavItems.map((item) => (
                     <Link
                       key={item.label}
                       href={item.href}
                       className="flex items-center space-x-3 rounded-md p-2 transition-colors hover:bg-accent/10 hover:text-accent"
                     >
-                      {React.cloneElement(item.icon, { className: "h-5 w-5 text-accent"})}
+                      {item.icon}
                       <span>{item.label}</span>
                     </Link>
                   ))}
+                  <AuthNavLinks isMobile={true} /> {/* Link di autenticazione per mobile */}
                 </nav>
               </div>
             </SheetContent>
