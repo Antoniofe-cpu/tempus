@@ -114,8 +114,8 @@ export interface RepairRequest {
   adminNotes?: string;
   quoteAmount?: number;
   quoteDetails?: string;
-  estimatedCompletionDate?: Date;
-  actualCompletionDate?: Date;
+  estimatedCompletionDate?: Date | null; // Modificato per permettere null
+  actualCompletionDate?: Date | null;   // Modificato per permettere null
 }
 
 export interface RepairRequestFirestoreData {
@@ -132,8 +132,8 @@ export interface RepairRequestFirestoreData {
   adminNotes?: string;
   quoteAmount?: number;
   quoteDetails?: string;
-  estimatedCompletionDate?: import('firebase/firestore').Timestamp;
-  actualCompletionDate?: import('firebase/firestore').Timestamp;
+  estimatedCompletionDate?: import('firebase/firestore').Timestamp | null; // Modificato
+  actualCompletionDate?: import('firebase/firestore').Timestamp | null;   // Modificato
 }
 
 // Tipi per Proposte di Vendita
@@ -215,4 +215,20 @@ export interface ServiceCard {
   description: string;
   iconUrl?: string;
   link: string;
+}
+
+export interface AppSettings {
+  id?: string; // ID del documento Firestore, solitamente uno fisso
+  appName: string;
+  contactEmail: string;
+  defaultCurrency: string;
+  // Altri campi possono essere aggiunti qui
+  updatedAt?: Date; // Per tracciare l'ultima modifica
+}
+
+export interface AppSettingsFirestoreData {
+  appName: string;
+  contactEmail: string;
+  defaultCurrency: string;
+  updatedAt?: import('firebase/firestore').Timestamp;
 }
