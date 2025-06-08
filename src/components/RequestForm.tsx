@@ -13,13 +13,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Slider } from "@/components/ui/slider";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { submitPersonalizedRequest, type FormState } from '@/lib/actions';
-// import AiSuggestions from './AiSuggestions'; // Rimosso import AiSuggestions
 import type { WatchType } from '@/lib/types';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { CheckCircle, AlertCircleIcon, SendIcon, Loader2 } from "lucide-react"; // Rimosso Sparkles
+import { CheckCircle, AlertCircleIcon, SendIcon, Loader2, SearchIcon } from "lucide-react"; 
 import { useFormStatus } from 'react-dom';
 import { auth } from '@/lib/firebase';
-import { onAuthStateChanged, type User } from 'firebase/auth'; // Aggiunto type User
+import { onAuthStateChanged, type User } from 'firebase/auth'; 
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 
@@ -31,7 +30,7 @@ const PersonalizedRequestSchema = z.object({
   desiredModel: z.string().optional(),
   budgetMin: z.coerce.number().min(0).optional().nullable(),
   budgetMax: z.coerce.number().min(0).optional().nullable(),
-  aiCriteria: z.string().max(500, {message: "La descrizione per AI non può superare i 500 caratteri."}).optional(), // Mantenuto il nome del campo per retrocompatibilità action
+  aiCriteria: z.string().max(500, {message: "La descrizione per AI non può superare i 500 caratteri."}).optional(), 
   additionalNotes: z.string().max(1000, {message: "Le note aggiuntive non possono superare i 1000 caratteri."}).optional(),
 }).refine(data => {
   if (data.budgetMin !== null && data.budgetMin !== undefined &&
@@ -51,7 +50,7 @@ const budgetPresets = [
   { label: "€0 - €5,000", min: 0, max: 5000 },
   { label: "€5,000 - €15,000", min: 5000, max: 15000 },
   { label: "€15,000 - €50,000", min: 15000, max: 50000 },
-  { label: "€50,000+", min: 50000, max: 200000 }, // Max is for slider practical limit
+  { label: "€50,000+", min: 50000, max: 200000 }, 
 ];
 
 const LOCAL_STORAGE_KEY_DATA = 'pendingRequestData';
@@ -84,7 +83,6 @@ export default function RequestForm() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
 
@@ -113,6 +111,22 @@ export default function RequestForm() {
     return () => unsubscribe();
   }, []);
 
+  useEffect(() => {
+    // Pre-fill from query params if present (e.g., from watch detail page)
+    const watchNameQuery = searchParams.get('watchName');
+    const watchBrandQuery = searchParams.get('watchBrand');
+    if (watchNameQuery || watchBrandQuery) {
+      let initialCriteria = "Sto cercando informazioni o sono interessato all'acquisto di un";
+      if (watchBrandQuery) initialCriteria += ` ${watchBrandQuery}`;
+      if (watchNameQuery) initialCriteria += ` ${watchNameQuery}`;
+      initialCriteria += ". Potete fornirmi maggiori dettagli?";
+      
+      if (!watch('aiCriteria')) { // Only set if not already filled (e.g. by localStorage)
+        setValue('aiCriteria', initialCriteria);
+      }
+    }
+  }, [searchParams, setValue, watch]);
+
 
   useEffect(() => {
     if (actionState.success) {
@@ -123,6 +137,10 @@ export default function RequestForm() {
         description: actionState.message,
         variant: "default",
       });
+      // Rimuovi i query params dopo l'invio se provengono dalla pagina dettaglio
+      if (searchParams.get('watchName') || searchParams.get('watchBrand')) {
+        router.replace(pathname, { scroll: false });
+      }
     } else if (actionState.message && !actionState.success && (actionState.issues || actionState.fields)) {
         toast({
             title: "Errore Invio Richiesta",
@@ -135,7 +153,7 @@ export default function RequestForm() {
             });
         }
     }
-  }, [actionState, reset, setValue, toast]);
+  }, [actionState, reset, setValue, toast, router, pathname, searchParams]);
 
 
   useEffect(() => {
@@ -165,6 +183,7 @@ export default function RequestForm() {
           const newSearchParams = new URLSearchParams(searchParams.toString());
           newSearchParams.delete('fromForm');
           newSearchParams.delete('origin');
+          // Non rimuovere watchName/watchBrand qui, potrebbero servire se l'utente non invia subito
           router.replace(`${pathname}?${newSearchParams.toString()}`, { scroll: false });
 
           toast({ title: "Dati Ripristinati", description: "I dati della tua richiesta precedente sono stati ripristinati. Puoi inviarla ora." });
@@ -190,7 +209,9 @@ export default function RequestForm() {
         description: "Per inviare la richiesta devi effettuare il login o registrarti. I tuoi dati sono stati salvati temporaneamente.",
         duration: 7000,
       });
-      router.push(`/login?redirect=${pathname}&fromForm=true&origin=requestForm`);
+      // Conserva i query params watchName/Brand durante il redirect
+      const currentQuery = new URLSearchParams(searchParams.toString()).toString();
+      router.push(`/login?redirect=${pathname}${currentQuery ? `&${currentQuery}` : ''}&fromForm=true&origin=requestForm`);
       return;
     }
 
@@ -218,10 +239,6 @@ export default function RequestForm() {
     }
   };
 
-  // Funzione handleAiSuggestionClick e handleTriggerAiSuggestions rimosse
-  // const handleAiSuggestionClick = (suggestion: string) => { ... };
-  // const handleTriggerAiSuggestions = useCallback(() => { ... }, [watch]);
-
   if (authLoading) {
     return (
         <div className="flex flex-col items-center justify-center h-96">
@@ -234,6 +251,7 @@ export default function RequestForm() {
   return (
     <Card className="w-full max-w-3xl mx-auto shadow-2xl bg-card border border-border/60">
       <CardHeader className="text-center">
+        <SearchIcon className="mx-auto h-12 w-12 text-accent mb-4" />
         <CardTitle className="font-headline text-4xl text-primary">Richiesta Personalizzata</CardTitle>
         <CardDescription className="text-muted-foreground text-lg">
           Descrivici l'orologio dei tuoi sogni. Lo troveremo per te.
@@ -361,19 +379,15 @@ export default function RequestForm() {
           </div>
 
           <div>
-            <Label htmlFor="aiCriteria" className="text-foreground/80">Descrivi la tua richiesta</Label> {/* Etichetta modificata */}
+            <Label htmlFor="aiCriteria" className="text-foreground/80">Descrivi la tua richiesta</Label> 
             <Textarea
-              id="aiCriteria" // Mantenuto id e register name per retrocompatibilità con l'action
+              id="aiCriteria" 
               {...register("aiCriteria")}
               placeholder="Es. Cerco un orologio sportivo elegante, resistente all'acqua, con bracciale in acciaio, quadrante blu, sotto i 10.000€"
               className="mt-1 min-h-[100px] bg-input border-border focus:border-accent focus:ring-accent"
             />
              {errors.aiCriteria && <p className="text-sm text-destructive mt-1">{errors.aiCriteria.message}</p>}
-            {/* Bottone "Ottieni Suggerimenti AI" rimosso */}
           </div>
-
-          {/* Componente AiSuggestions rimosso */}
-          {/* <AiSuggestions onSuggestionClick={handleAiSuggestionClick} context="form" triggerFetch={handleTriggerAiSuggestions} /> */}
 
           <div>
             <Label htmlFor="additionalNotes" className="text-foreground/80">Note Aggiuntive (Opzionale)</Label>
@@ -396,5 +410,3 @@ export default function RequestForm() {
     </Card>
   );
 }
-
-    
