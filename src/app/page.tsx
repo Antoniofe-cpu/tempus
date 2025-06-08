@@ -15,7 +15,7 @@ import { getServiceCards } from '@/services/serviceCardService';
 import { getWatches } from '@/services/watchService';
 import { useToast } from '@/hooks/use-toast';
 import ServiceCard from '@/components/ServiceCard';
-import WatchNewsSection from '@/components/WatchNewsSection'; // Aggiunto import
+import WatchNewsSection from '@/components/WatchNewsSection'; 
 
 export default function HomePage() {
   const [latestWatches, setLatestWatches] = useState<Watch[]>([]);
@@ -26,22 +26,29 @@ export default function HomePage() {
 
   const fetchLatestWatches = useCallback(async () => {
     setIsLoadingLatestWatches(true);
-    console.log("HomePage: Inizio fetchLatestWatches");
+    console.log("HomePage: Inizio fetchLatestWatches (DEBUG MODE - loading all watches)");
     try {
-      const allWatches = await getWatches(); // getWatches ora ordina per createdAt
+      const allWatches = await getWatches(); 
       console.log(`HomePage: Totale orologi ricevuti da getWatches: ${allWatches.length}`);
       
-      const newArrivals = allWatches.filter(w => w.isNewArrival === true).slice(0, 3);
-      console.log(`HomePage: Nuovi Arrivi filtrati (isNewArrival=true): ${newArrivals.length} orologi.`);
-      newArrivals.forEach(w => console.log(`  - Nuovo Arrivo: ${w.name}, isNewArrival: ${w.isNewArrival}`));
+      // --- DEBUG: Carica tutti gli orologi per vedere se quello di test è presente ---
+      setLatestWatches(allWatches);
+      console.log("HomePage (DEBUG): Caricati TUTTI gli orologi in latestWatches.");
+      allWatches.forEach(w => console.log(`  - DEBUG - Orologio caricato: ${w.name}, ID: ${w.id}, isNewArrival: ${w.isNewArrival}, Prezzo: ${w.price}`));
+      // --- FINE DEBUG ---
 
-      if (newArrivals.length > 0) {
-          setLatestWatches(newArrivals);
-      } else {
-          console.log("HomePage: Nessun 'Nuovo Arrivo' trovato (isNewArrival=true). Uso gli ultimi 3 per data di inserimento.");
-          // Se non ci sono "isNewArrival", prendi gli ultimi 3 per data di inserimento (getWatches già li ordina)
-          setLatestWatches(allWatches.slice(0, 3));
-      }
+      // Logica Originale (temporaneamente commentata per debug):
+      // const newArrivals = allWatches.filter(w => w.isNewArrival === true).slice(0, 3);
+      // console.log(`HomePage: Nuovi Arrivi filtrati (isNewArrival=true): ${newArrivals.length} orologi.`);
+      // newArrivals.forEach(w => console.log(`  - Nuovo Arrivo: ${w.name}, isNewArrival: ${w.isNewArrival}`));
+
+      // if (newArrivals.length > 0) {
+      //     setLatestWatches(newArrivals);
+      // } else {
+      //     console.log("HomePage: Nessun 'Nuovo Arrivo' trovato (isNewArrival=true). Uso gli ultimi 3 per data di inserimento.");
+      //     setLatestWatches(allWatches.slice(0, 3));
+      // }
+
     } catch (error) {
       console.error("Errore nel caricamento degli ultimi orologi:", error);
       toast({ title: "Errore", description: "Impossibile caricare i nuovi arrivi.", variant: "destructive" });
@@ -73,9 +80,9 @@ export default function HomePage() {
   }, [fetchLatestWatches, fetchServiceCardsData]);
 
   useEffect(() => {
-    // Log dello stato finale di latestWatches dopo l'aggiornamento
     if (!isLoadingLatestWatches) {
-      console.log("HomePage: Stato finale latestWatches:", latestWatches);
+      console.log("HomePage: Stato finale latestWatches (count):", latestWatches.length);
+      // latestWatches.forEach(w => console.log(`  HomePage - Stato Finale - Orologio: ${w.name}, isNewArrival: ${w.isNewArrival}, ID: ${w.id}`));
     }
   }, [latestWatches, isLoadingLatestWatches]);
 
@@ -147,7 +154,7 @@ export default function HomePage() {
         <section className="py-16 md:py-24 bg-muted">
             <div className="container mx-auto px-4">
                 <h2 className="font-headline text-4xl md:text-5xl font-bold text-center mb-12">
-                    <span className="text-accent">Nuovi</span> Arrivi
+                    <span className="text-accent">Novità</span> in Catalogo
                 </h2>
                 {isLoadingLatestWatches ? (
                     <div className="flex justify-center items-center py-8">
@@ -155,7 +162,7 @@ export default function HomePage() {
                     </div>
                 ) : latestWatches.length > 0 ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-                        {latestWatches.map((watch) => (
+                        {latestWatches.slice(0,3).map((watch) => ( // Mostra solo i primi 3, ma tutti sono in latestWatches per il debug
                             <WatchCard key={watch.id} watch={watch} />
                         ))}
                     </div>
@@ -182,7 +189,7 @@ export default function HomePage() {
                       <LucideWatchIcon className="h-12 w-12 text-accent animate-spin" />
                     </div>
                 ) : serviceCards.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8"> {/* Modificato qui: md:grid-cols-2 */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8"> 
                     {serviceCards.map((card) => (
                       <ServiceCard
                         key={card.id}
@@ -201,7 +208,6 @@ export default function HomePage() {
             </div>
         </section>
 
-        {/* Sezione Ultime Notizie aggiunta qui */}
         <section className="py-16 md:py-24 bg-muted">
           <div className="container mx-auto px-4">
             <WatchNewsSection />

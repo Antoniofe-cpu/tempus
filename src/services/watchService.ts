@@ -1,6 +1,6 @@
 
 // src/services/watchService.ts
-import type { Watch, WatchFirestoreData } from '@/lib/types'; // Assicurati di importare WatchFirestoreData
+import type { Watch, WatchFirestoreData } from '@/lib/types'; 
 import { db } from '@/lib/firebase';
 import { 
   collection, 
@@ -12,9 +12,9 @@ import {
   getDoc,
   query,
   where,
-  Timestamp, // Importa Timestamp
+  Timestamp, 
   orderBy,
-  serverTimestamp // Importa serverTimestamp
+  serverTimestamp 
 } from 'firebase/firestore';
 import { watchesData as initialMockWatches } from '@/lib/mock-data';
 
@@ -23,15 +23,15 @@ const watchesCollection = collection(db, COLLECTION_NAME);
 
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-// Helper per convertire dati da Firestore (con Timestamp) a Watch (con Date, se necessario)
-// Attualmente, il modello Watch non ha campi Date, quindi la conversione diretta è ok.
 const fromFirestore = (docSnap: import('firebase/firestore').DocumentSnapshot): Watch => {
-  const data = docSnap.data() as WatchFirestoreData; // Usa WatchFirestoreData
+  const data = docSnap.data() as WatchFirestoreData; 
   return {
     id: docSnap.id,
     ...data,
-    // Se avessi campi Date in Watch, li convertiresti qui da data.firestoreTimestamp.toDate()
-  } as Watch; // Cast a Watch, assumendo che i campi corrispondano o siano opzionali
+    // Convert Timestamps to Dates if they exist and are Timestamps
+    createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate() : data.createdAt,
+    updatedAt: data.updatedAt instanceof Timestamp ? data.updatedAt.toDate() : data.updatedAt,
+  } as Watch; 
 };
 
 
@@ -43,10 +43,15 @@ export async function getWatches(filterOptions?: { isNewArrival?: boolean }): Pr
     if (filterOptions?.isNewArrival === true) {
       q = query(watchesCollection, where('isNewArrival', '==', true), orderBy('createdAt', 'desc'));
     } else {
-      q = query(watchesCollection, orderBy('createdAt', 'desc')); // Ordina sempre per data di creazione decrescente
+      q = query(watchesCollection, orderBy('createdAt', 'desc')); 
     }
     const querySnapshot = await getDocs(q);
-    const watches = querySnapshot.docs.map(fromFirestore);
+    const watches = querySnapshot.docs.map(docSnap => {
+        const watch = fromFirestore(docSnap);
+        // Log per ogni orologio recuperato, specificando isNewArrival e createdAt
+        console.log(`Servizio (Firestore) - Orologio letto: ${watch.name}, ID: ${watch.id}, isNewArrival: ${watch.isNewArrival}, Prezzo: ${watch.price}, createdAt: ${watch.createdAt ? new Date(watch.createdAt).toISOString() : 'N/A'}`);
+        return watch;
+    });
     console.log('Servizio (Firestore): getWatches restituisce', watches.length, 'orologi');
     return watches;
   } catch (error) {
@@ -155,17 +160,18 @@ export async function populateFirestoreWithMockDataIfNeeded(): Promise<void> {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { id, ...watchData } = watch; 
         const dataToSave: Partial<WatchFirestoreData> = {
-          ...watchData, // Tutti i campi del mock watch (inclusi isNewArrival, ecc.)
+          ...watchData, 
           createdAt: serverTimestamp() as Timestamp,
           updatedAt: serverTimestamp() as Timestamp,
         };
-        // Rimuovi chiavi con valore undefined prima di salvare
+        
         Object.keys(dataToSave).forEach(key => {
             if (dataToSave[key as keyof WatchFirestoreData] === undefined) {
                 delete dataToSave[key as keyof WatchFirestoreData];
             }
         });
-        // console.log(`--- Popolamento: Dati da salvare per ${watch.name}:`, JSON.stringify(dataToSave, null, 2));
+        // Decommentato per debug
+        console.log(`--- Popolamento: Dati DA SALVARE per ${watch.name}:`, JSON.stringify(dataToSave, null, 2));
         const docRef = await addDoc(watchesCollection, dataToSave);
         console.log(`--- Popolamento: Orologio "${watch.name}" aggiunto con ID Firestore: ${docRef.id}`);
       }
