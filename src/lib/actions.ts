@@ -2,11 +2,13 @@
 'use server';
 
 import { z } from 'zod';
-import type { PersonalizedRequest, RepairRequestStatus, AllRepairRequestStatuses as AllRepairRequestStatusesType } from './types'; // Modificato import
+import type { PersonalizedRequest, RepairRequestStatus, SellRequestStatus, WatchCondition } from './types';
+import { watchConditionOptions } from './types'; // Import watchConditionOptions
 import { suggestWatches as genAISuggestWatches, type SuggestWatchesInput, type SuggestWatchesOutput } from '@/ai/flows/suggest-watches';
 import { fetchWatchNews as genAIFetchWatchNews, type FetchWatchNewsOutput } from '@/ai/flows/fetch-watch-news-flow';
 import { addRequestService } from '@/services/requestService';
-import { addRepairRequestService } from '@/services/repairRequestService'; // Importato il nuovo servizio
+import { addRepairRequestService } from '@/services/repairRequestService';
+import { addSellRequestService } from '@/services/sellRequestService'; // Importato il nuovo servizio
 
 // Schema for personalized request form validation
 const PersonalizedRequestSchema = z.object({
@@ -119,7 +121,6 @@ export async function getWatchNews(): Promise<FetchWatchNewsOutput> {
   }
 }
 
-// Schema e Action per Richiesta di Riparazione
 const RepairRequestSchema = z.object({
   name: z.string().min(2, { message: "Il nome deve contenere almeno 2 caratteri." }),
   email: z.string().email({ message: "Inserisci un indirizzo email valido." }),
@@ -178,5 +179,61 @@ export async function submitRepairRequest(
   }
 }
 
-// Placeholder per la sezione Vendita
-// export async function submitSellRequest(...) { ... }
+// Schema e Action per Proposta di Vendita
+const currentYear = new Date().getFullYear();
+const SellRequestSchema = z.object({
+  name: z.string().min(2, { message: "Il nome deve contenere almeno 2 caratteri." }),
+  email: z.string().email({ message: "Inserisci un indirizzo email valido." }),
+  phone: z.string().optional().refine(val => !val || /^[+]?[0-9\s-()]*$/.test(val), { message: "Numero di telefono non valido."}),
+  watchBrand: z.string().min(1, { message: "La marca è obbligatoria." }),
+  watchModel: z.string().min(1, { message: "Il modello è obbligatorio." }),
+  watchYear: z.coerce.number().int().min(1900, {message: "Anno non valido."}).max(currentYear, {message: `L'anno non può superare ${currentYear}.`}).optional().nullable(),
+  watchCondition: z.enum(watchConditionOptions, { errorMap: () => ({ message: 'Seleziona una condizione valida.' })}),
+  hasBox: z.preprocess(val => val === 'on' || val === true, z.boolean()).default(false),
+  hasPapers: z.preprocess(val => val === 'on' || val === true, z.boolean()).default(false),
+  desiredPrice: z.coerce.number().min(0, {message: "Il prezzo deve essere positivo."}).optional().nullable(),
+  additionalInfo: z.string().max(1000, {message: "Le informazioni non possono superare 1000 caratteri."}).optional(),
+});
+
+
+export async function submitSellRequest(
+  prevState: FormState,
+  data: FormData
+): Promise<FormState> {
+  const formData = Object.fromEntries(data);
+  const parsed = SellRequestSchema.safeParse(formData);
+
+  if (!parsed.success) {
+    const issues = parsed.error.issues.map((issue) => {
+      return issue.path.length > 0 ? `${issue.path.join('.')}: ${issue.message}` : issue.message;
+    });
+    console.error('Validation errors (Sell Request):', parsed.error.flatten().fieldErrors);
+    return {
+      message: "Errore nella validazione dei dati. Controlla i campi e i messaggi qui sotto.",
+      fields: formData as Record<string, string>, // Restituisce i dati del form per precompilazione
+      issues,
+      success: false,
+    };
+  }
+
+  const requestDataToSave = {
+    ...parsed.data,
+    status: 'Nuova Proposta' as SellRequestStatus,
+  };
+
+  try {
+    const newRequest = await addSellRequestService(requestDataToSave);
+    return { 
+      message: `Grazie ${parsed.data.name}, la tua proposta di vendita (ID: ${newRequest.id}) è stata inviata! Ti contatteremo al più presto per una valutazione.`, 
+      success: true,
+      requestId: newRequest.id
+    };
+  } catch (error) {
+    console.error('Errore nel salvataggio della proposta di vendita:', error);
+    return {
+      message: `Si è verificato un errore durante l'invio della proposta: ${(error as Error).message}. Riprova più tardi.`,
+      fields: formData as Record<string, string>,
+      success: false,
+    };
+  }
+}

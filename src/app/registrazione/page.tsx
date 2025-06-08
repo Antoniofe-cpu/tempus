@@ -59,10 +59,10 @@ export default function RegistrazionePage() {
       
       const redirectUrl = searchParams.get('redirect');
       const fromForm = searchParams.get('fromForm') === 'true';
-      const origin = searchParams.get('origin');
+      const origin = searchParams.get('origin'); // es. 'requestForm', 'repairForm', 'sellForm'
 
-      if (redirectUrl && fromForm && origin === 'requestForm') {
-        router.push(`${redirectUrl}?fromForm=true&origin=requestForm`); // Mantiene i parametri per il ripristino
+      if (redirectUrl && fromForm && origin) {
+        router.push(`${redirectUrl}?fromForm=true&origin=${origin}`);
       } else {
         router.push('/registrazione/successo');
       }
@@ -163,7 +163,7 @@ export default function RegistrazionePage() {
              <p className="text-muted-foreground">
               Hai già un account?{' '}
               <Link 
-                href={`/login${searchParams.get('redirect') ? `?redirect=${searchParams.get('redirect')}&fromForm=${searchParams.get('fromForm') === 'true'}&origin=${searchParams.get('origin')}` : ''}`} 
+                 href={`/login${searchParams.get('redirect') ? `?redirect=${encodeURIComponent(searchParams.get('redirect')!)}&fromForm=${searchParams.get('fromForm') === 'true'}&origin=${searchParams.get('origin') || ''}` : ''}`} 
                 className="font-medium text-accent hover:underline"
               >
                 Accedi
@@ -176,5 +176,3 @@ export default function RegistrazionePage() {
     </div>
   );
 }
-
-    

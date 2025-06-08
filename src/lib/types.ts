@@ -10,7 +10,7 @@ export interface Watch {
   rarity?: string; 
   condition?: string; 
   dataAiHint?: string; 
-  isNewArrival?: boolean; // Aggiunto per coerenza con admin/orologi
+  isNewArrival?: boolean;
 }
 
 export type WatchType = 'Dress' | 'Sportivo' | 'Cronografo' | 'Subacqueo' | 'Vintage' | 'Altro';
@@ -108,7 +108,6 @@ export interface RepairRequest {
   watchModel: string;
   watchSerialNumber?: string;
   problemDescription: string;
-  // photoUrls?: string[]; // Per ora omesso per semplicità, si può aggiungere input testuale
   status: RepairRequestStatus;
   createdAt: Date;
   updatedAt?: Date;
@@ -127,7 +126,6 @@ export interface RepairRequestFirestoreData {
   watchModel: string;
   watchSerialNumber?: string;
   problemDescription: string;
-  // photoUrls?: string[];
   status: RepairRequestStatus;
   createdAt: import('firebase/firestore').Timestamp;
   updatedAt?: import('firebase/firestore').Timestamp;
@@ -138,7 +136,11 @@ export interface RepairRequestFirestoreData {
   actualCompletionDate?: import('firebase/firestore').Timestamp;
 }
 
-// Tipi per Proposte di Vendita (Placeholder per ora)
+// Tipi per Proposte di Vendita
+export const watchConditionOptions = ['Nuovo', 'Come Nuovo (Mint)', 'Ottime Condizioni', 'Buone Condizioni', 'Discrete Condizioni'] as const;
+export type WatchCondition = typeof watchConditionOptions[number];
+
+
 export type SellRequestStatus =
   | 'Nuova Proposta'
   | 'In Valutazione'
@@ -149,11 +151,13 @@ export type SellRequestStatus =
   | 'Orologio Ricevuto e Verificato'
   | 'Pagamento Effettuato'
   | 'Conclusa'
-  | 'Cancellata';
+  | 'Cancellata'
+  | 'In Trattativa';
 
 export const AllSellRequestStatuses: SellRequestStatus[] = [
   'Nuova Proposta',
   'In Valutazione',
+  'In Trattativa',
   'Offerta Inviata',
   'Accettata dal Cliente',
   'Rifiutata dal Cliente',
@@ -163,6 +167,7 @@ export const AllSellRequestStatuses: SellRequestStatus[] = [
   'Conclusa',
   'Cancellata',
 ];
+
 export interface SellRequest {
   id: string;
   name: string;
@@ -171,28 +176,27 @@ export interface SellRequest {
   watchBrand: string;
   watchModel: string;
   watchYear?: number;
-  watchCondition: string; // Es. Nuovo, Usato Mint, Buono, Discreto
+  watchCondition: WatchCondition;
   hasBox: boolean;
   hasPapers: boolean;
   desiredPrice?: number;
   additionalInfo?: string;
-  // photoUrls?: string[]; // Per ora omesso
+  // photoUrls?: string[]; // Per ora omesso per semplicità
   status: SellRequestStatus;
   createdAt: Date;
   updatedAt?: Date;
   adminNotes?: string;
-  offerAmount?: number; // Offerta fatta da Tempus Concierge
+  offerAmount?: number; 
 }
 
 export interface SellRequestFirestoreData {
-  // Simile a SellRequest ma con Timestamp per le date
   name: string;
   email: string;
   phone?: string;
   watchBrand: string;
   watchModel: string;
   watchYear?: number;
-  watchCondition: string;
+  watchCondition: WatchCondition;
   hasBox: boolean;
   hasPapers: boolean;
   desiredPrice?: number;
