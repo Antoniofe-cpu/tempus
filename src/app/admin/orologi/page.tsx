@@ -18,9 +18,9 @@ import {
   DialogHeader,
   DialogTitle as DialogT,
   DialogClose,
-  DialogTrigger, // Added DialogTrigger
+  DialogTrigger,
 } from "@/components/ui/dialog";
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import type { Watch as WatchType } from '@/lib/types';
@@ -33,11 +33,12 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { getWatches, addWatchService, updateWatchService, deleteWatchService, populateFirestoreWithMockDataIfNeeded } from '@/services/watchService';
 import { useToast } from "@/hooks/use-toast";
+import { Checkbox } from '@/components/ui/checkbox'; // Aggiunto Checkbox
 
+const currentYear = new Date().getFullYear();
 
 const WatchFormSchema = z.object({
   name: z.string().min(2, { message: "Il nome deve contenere almeno 2 caratteri." }),
@@ -50,6 +51,26 @@ const WatchFormSchema = z.object({
   rarity: z.string().optional().default(''),
   condition: z.string().optional().default(''),
   isNewArrival: z.boolean().default(false),
+
+  referenceNumber: z.string().optional(),
+  caseMaterial: z.string().optional(),
+  caseDiameter: z.string().optional(),
+  caseThickness: z.string().optional(),
+  waterResistance: z.string().optional(),
+  movementType: z.string().optional(),
+  caliber: z.string().optional(),
+  powerReserve: z.string().optional(),
+  dialColor: z.string().optional(),
+  dialMarkers: z.string().optional(),
+  braceletMaterial: z.string().optional(),
+  claspType: z.string().optional(),
+  functions: z.string().optional(), // Stringa separata da virgole, verrà convertita in array
+  additionalImageUrls: z.string().optional(), // Stringa separata da a capo, verrà convertita in array
+  yearOfProduction: z.coerce.number().int().min(1800).max(currentYear).optional().nullable(),
+  complications: z.string().optional(), // Stringa separata da virgole
+  crystalType: z.string().optional(),
+  lugWidth: z.string().optional(),
+  bezelMaterial: z.string().optional(),
 });
 
 type WatchFormData = z.infer<typeof WatchFormSchema>;
@@ -63,19 +84,15 @@ export default function AdminOrologiPage() {
   const [watchToDelete, setWatchToDelete] = useState<WatchType | null>(null);
   const { toast } = useToast();
 
-  const { register, handleSubmit, reset, formState: { errors }, setValue } = useForm<WatchFormData>({
+  const { register, handleSubmit, reset, formState: { errors }, control, setValue } = useForm<WatchFormData>({
     resolver: zodResolver(WatchFormSchema),
     defaultValues: {
-      name: '',
-      brand: '',
-      price: 0,
-      stock: 0,
-      imageUrl: '',
-      description: '',
-      dataAiHint: '',
-      rarity: '',
-      condition: '',
-      isNewArrival: false,
+      name: '', brand: '', price: 0, stock: 0, imageUrl: '', description: '',
+      dataAiHint: '', rarity: '', condition: '', isNewArrival: false,
+      referenceNumber: '', caseMaterial: '', caseDiameter: '', caseThickness: '', waterResistance: '',
+      movementType: '', caliber: '', powerReserve: '', dialColor: '', dialMarkers: '',
+      braceletMaterial: '', claspType: '', functions: '', additionalImageUrls: '',
+      yearOfProduction: undefined, complications: '', crystalType: '', lugWidth: '', bezelMaterial: '',
     }
   });
 
@@ -109,19 +126,20 @@ export default function AdminOrologiPage() {
           rarity: editingWatch.rarity || '',
           condition: editingWatch.condition || '',
           isNewArrival: editingWatch.isNewArrival || false,
+          functions: editingWatch.functions?.join(', ') || '',
+          additionalImageUrls: editingWatch.additionalImageUrls?.join('\n') || '',
+          complications: editingWatch.complications?.join(', ') || '',
+          yearOfProduction: editingWatch.yearOfProduction ?? undefined,
         });
       } else {
-        reset({ 
-            name: '',
-            brand: '',
-            price: 0,
-            stock: 0,
-            imageUrl: 'https://placehold.co/600x400.png',
-            description: '',
-            dataAiHint: '',
-            rarity: '',
-            condition: '',
-            isNewArrival: false,
+         reset({ // Reset to default values for new watch
+            name: '', brand: '', price: 0, stock: 0,
+            imageUrl: 'https://placehold.co/600x400.png', description: '',
+            dataAiHint: '', rarity: '', condition: '', isNewArrival: false,
+            referenceNumber: '', caseMaterial: '', caseDiameter: '', caseThickness: '', waterResistance: '',
+            movementType: '', caliber: '', powerReserve: '', dialColor: '', dialMarkers: '',
+            braceletMaterial: '', claspType: '', functions: '', additionalImageUrls: '',
+            yearOfProduction: undefined, complications: '', crystalType: '', lugWidth: '', bezelMaterial: '',
         });
       }
     }
@@ -129,8 +147,11 @@ export default function AdminOrologiPage() {
 
 
   const onSubmit = async (data: WatchFormData) => {
-    console.log('Dati del form prima dell\'invio:', data);
     try {
+      const functionsArray = data.functions ? data.functions.split(',').map(f => f.trim()).filter(f => f) : undefined;
+      const complicationsArray = data.complications ? data.complications.split(',').map(c => c.trim()).filter(c => c) : undefined;
+      const additionalImageUrlsArray = data.additionalImageUrls ? data.additionalImageUrls.split('\n').map(url => url.trim()).filter(url => url) : undefined;
+
       const watchPayload = {
         name: data.name,
         brand: data.brand,
@@ -139,17 +160,43 @@ export default function AdminOrologiPage() {
         description: data.description,
         imageUrl: data.imageUrl || `https://placehold.co/600x400.png`,
         dataAiHint: data.dataAiHint || data.name.split(" ").slice(0,2).join(" ").toLowerCase() || 'orologio generico',
-        rarity: data.rarity || '',
-        condition: data.condition || '',
+        rarity: data.rarity,
+        condition: data.condition,
         isNewArrival: data.isNewArrival,
+        referenceNumber: data.referenceNumber,
+        caseMaterial: data.caseMaterial,
+        caseDiameter: data.caseDiameter,
+        caseThickness: data.caseThickness,
+        waterResistance: data.waterResistance,
+        movementType: data.movementType,
+        caliber: data.caliber,
+        powerReserve: data.powerReserve,
+        dialColor: data.dialColor,
+        dialMarkers: data.dialMarkers,
+        braceletMaterial: data.braceletMaterial,
+        claspType: data.claspType,
+        functions: functionsArray,
+        additionalImageUrls: additionalImageUrlsArray,
+        yearOfProduction: data.yearOfProduction ?? undefined,
+        complications: complicationsArray,
+        crystalType: data.crystalType,
+        lugWidth: data.lugWidth,
+        bezelMaterial: data.bezelMaterial,
       };
 
+      // Rimuovi chiavi con valore undefined dal payload per evitare problemi con Firestore
+      Object.keys(watchPayload).forEach(key => {
+        const k = key as keyof typeof watchPayload;
+        if (watchPayload[k] === undefined || watchPayload[k] === '') {
+          delete watchPayload[k];
+        }
+      });
+
+
       if (editingWatch) {
-        console.log('Tentativo di MODIFICA orologio con ID:', editingWatch.id, 'Payload:', watchPayload);
-        await updateWatchService(editingWatch.id, watchPayload);
+        await updateWatchService(editingWatch.id, watchPayload as Partial<Omit<WatchType, 'id'>>);
         toast({ title: "Successo", description: "Orologio modificato con successo." });
       } else {
-        console.log('Tentativo di AGGIUNTA nuovo orologio. Payload:', watchPayload);
         await addWatchService(watchPayload as Omit<WatchType, 'id'>); 
         toast({ title: "Successo", description: "Orologio aggiunto con successo." });
       }
@@ -170,18 +217,15 @@ export default function AdminOrologiPage() {
 
   const handleAddNewClick = () => {
     setEditingWatch(null);
-    reset({ 
-      name: '',
-      brand: '',
-      price: 0,
-      stock: 0,
-      imageUrl: 'https://placehold.co/600x400.png',
-      description: '',
-      dataAiHint: '',
-      rarity: '',
-      condition: '',
-      isNewArrival: false,
-    }); 
+    reset({ // Assicurati che tutti i campi siano resettati
+        name: '', brand: '', price: 0, stock: 0,
+        imageUrl: 'https://placehold.co/600x400.png', description: '',
+        dataAiHint: '', rarity: '', condition: '', isNewArrival: false,
+        referenceNumber: '', caseMaterial: '', caseDiameter: '', caseThickness: '', waterResistance: '',
+        movementType: '', caliber: '', powerReserve: '', dialColor: '', dialMarkers: '',
+        braceletMaterial: '', claspType: '', functions: '', additionalImageUrls: '',
+        yearOfProduction: undefined, complications: '', crystalType: '', lugWidth: '', bezelMaterial: '',
+    });
     setIsDialogOpen(true);
   };
 
@@ -223,99 +267,147 @@ export default function AdminOrologiPage() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="font-headline text-4xl font-bold text-primary">Gestione Orologi</h1>
-          <p className="text-muted-foreground mt-1">Aggiungi, modifica o rimuovi orologi dal catalogo Occasioni (dati su Firestore).</p>
+          <p className="text-muted-foreground mt-1">Aggiungi, modifica o rimuovi orologi dal catalogo.</p>
         </div>
-        <div className="flex gap-2">
-            <Dialog open={isDialogOpen} onOpenChange={(open) => {
-              setIsDialogOpen(open);
-              if (!open) { 
-                setEditingWatch(null);
-                reset();
-              }
-            }}>
-              <DialogTrigger asChild>
-                <Button onClick={handleAddNewClick} className="bg-primary hover:bg-primary/90 text-primary-foreground">
-                  <PlusCircle className="mr-2 h-5 w-5" />
-                  Aggiungi Orologio
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-lg bg-card border-border/60 shadow-xl max-h-[80vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogT className="font-headline text-2xl text-primary text-left">{editingWatch ? "Modifica Orologio" : "Aggiungi Nuovo Orologio"}</DialogT>
-                  <DialogDesc className="text-muted-foreground text-left">
-                    {editingWatch ? "Modifica i dettagli dell'orologio esistente." : "Inserisci i dettagli del nuovo orologio da aggiungere al catalogo."}
-                  </DialogDesc>
-                </DialogHeader>
-                <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 py-4 px-0">
-                  <div>
-                    <Label htmlFor="name" className="text-foreground/80 block mb-1.5">Nome Orologio</Label>
-                    <Input id="name" {...register("name")} className="bg-input border-border focus:border-accent focus:ring-accent" />
-                    {errors.name && <p className="text-sm text-destructive mt-1">{errors.name.message}</p>}
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="brand" className="text-foreground/80 block mb-1.5">Marca</Label>
-                    <Input id="brand" {...register("brand")} className="bg-input border-border focus:border-accent focus:ring-accent" />
-                    {errors.brand && <p className="text-sm text-destructive mt-1">{errors.brand.message}</p>}
-                  </div>
+        <Dialog open={isDialogOpen} onOpenChange={(open) => {
+          setIsDialogOpen(open);
+          if (!open) { 
+            setEditingWatch(null);
+            reset();
+          }
+        }}>
+          <DialogTrigger asChild>
+            <Button onClick={handleAddNewClick} className="bg-primary hover:bg-primary/90 text-primary-foreground">
+              <PlusCircle className="mr-2 h-5 w-5" />
+              Aggiungi Orologio
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-2xl bg-card border-border/60 shadow-xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogT className="font-headline text-2xl text-primary text-left">{editingWatch ? "Modifica Orologio" : "Aggiungi Nuovo Orologio"}</DialogT>
+              <DialogDesc className="text-muted-foreground text-left">
+                {editingWatch ? "Modifica i dettagli dell'orologio esistente." : "Inserisci i dettagli del nuovo orologio da aggiungere al catalogo."}
+              </DialogDesc>
+            </DialogHeader>
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 py-4 px-1"> {/* Reduced padding for more space */}
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="name">Nome Orologio</Label>
+                  <Input id="name" {...register("name")} className="mt-1 bg-input"/>
+                  {errors.name && <p className="text-sm text-destructive mt-1">{errors.name.message}</p>}
+                </div>
+                <div>
+                  <Label htmlFor="brand">Marca</Label>
+                  <Input id="brand" {...register("brand")} className="mt-1 bg-input"/>
+                  {errors.brand && <p className="text-sm text-destructive mt-1">{errors.brand.message}</p>}
+                </div>
+              </div>
 
-                  <div>
-                    <Label htmlFor="price" className="text-foreground/80 block mb-1.5">Prezzo (€)</Label>
-                    <Input id="price" type="number" step="0.01" {...register("price")} className="bg-input border-border focus:border-accent focus:ring-accent" />
-                    {errors.price && <p className="text-sm text-destructive mt-1">{errors.price.message}</p>}
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="stock" className="text-foreground/80 block mb-1.5">Disponibilità</Label>
-                    <Input id="stock" type="number" step="1" {...register("stock")} className="bg-input border-border focus:border-accent focus:ring-accent" />
-                    {errors.stock && <p className="text-sm text-destructive mt-1">{errors.stock.message}</p>}
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="imageUrl" className="text-foreground/80 block mb-1.5">URL Immagine</Label>
-                    <Input id="imageUrl" {...register("imageUrl")} placeholder="https://placehold.co/600x400.png" className="bg-input border-border focus:border-accent focus:ring-accent" />
-                    {errors.imageUrl && <p className="text-sm text-destructive mt-1">{errors.imageUrl.message}</p>}
-                  </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="price">Prezzo (€)</Label>
+                  <Input id="price" type="number" step="0.01" {...register("price")} className="mt-1 bg-input"/>
+                  {errors.price && <p className="text-sm text-destructive mt-1">{errors.price.message}</p>}
+                </div>
+                <div>
+                  <Label htmlFor="stock">Disponibilità</Label>
+                  <Input id="stock" type="number" step="1" {...register("stock")} className="mt-1 bg-input"/>
+                  {errors.stock && <p className="text-sm text-destructive mt-1">{errors.stock.message}</p>}
+                </div>
+              </div>
+              
+              <div>
+                <Label htmlFor="imageUrl">URL Immagine Principale</Label>
+                <Input id="imageUrl" {...register("imageUrl")} placeholder="https://placehold.co/600x400.png" className="mt-1 bg-input"/>
+                {errors.imageUrl && <p className="text-sm text-destructive mt-1">{errors.imageUrl.message}</p>}
+              </div>
 
-                  <div>
-                    <Label htmlFor="dataAiHint" className="text-foreground/80 block mb-1.5">Hint AI per Immagine (max 2 parole)</Label>
-                    <Input id="dataAiHint" {...register("dataAiHint")} placeholder="es. rolex submariner" className="bg-input border-border focus:border-accent focus:ring-accent" />
-                    {errors.dataAiHint && <p className="text-sm text-destructive mt-1">{errors.dataAiHint.message}</p>}
-                  </div>
+              <div>
+                <Label htmlFor="additionalImageUrls">URL Immagini Aggiuntive (una per riga)</Label>
+                <Textarea id="additionalImageUrls" {...register("additionalImageUrls")} className="mt-1 min-h-[80px] bg-input" placeholder="https://placehold.co/600x400_1.png&#10;https://placehold.co/600x400_2.png"/>
+                {errors.additionalImageUrls && <p className="text-sm text-destructive mt-1">{errors.additionalImageUrls.message}</p>}
+              </div>
 
-                  <div>
-                    <Label htmlFor="rarity" className="text-foreground/80 block mb-1.5">Rarità (Opzionale)</Label>
-                    <Input id="rarity" {...register("rarity")} placeholder="Es. Limited Edition" className="bg-input border-border focus:border-accent focus:ring-accent" />
-                  </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="dataAiHint">Hint AI Immagine (max 2 parole)</Label>
+                  <Input id="dataAiHint" {...register("dataAiHint")} placeholder="es. rolex submariner" className="mt-1 bg-input"/>
+                  {errors.dataAiHint && <p className="text-sm text-destructive mt-1">{errors.dataAiHint.message}</p>}
+                </div>
+                <div>
+                  <Label htmlFor="rarity">Rarità</Label>
+                  <Input id="rarity" {...register("rarity")} placeholder="Es. Limited Edition" className="mt-1 bg-input"/>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="condition">Condizione</Label>
+                  <Input id="condition" {...register("condition")} placeholder="Es. Nuovo, Mint" className="mt-1 bg-input"/>
+                </div>
+                <div>
+                  <Label htmlFor="yearOfProduction">Anno di Produzione</Label>
+                  <Input id="yearOfProduction" type="number" {...register("yearOfProduction")} placeholder={`Es. ${currentYear}`} className="mt-1 bg-input"/>
+                  {errors.yearOfProduction && <p className="text-sm text-destructive mt-1">{errors.yearOfProduction.message}</p>}
+                </div>
+              </div>
 
-                  <div>
-                    <Label htmlFor="condition" className="text-foreground/80 block mb-1.5">Condizione (Opzionale)</Label>
-                    <Input id="condition" {...register("condition")} placeholder="Es. Nuovo, Mint" className="bg-input border-border focus:border-accent focus:ring-accent" />
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="description" className="text-foreground/80 block mb-1.5">Descrizione</Label>
-                    <Textarea id="description" {...register("description")} className="min-h-[100px] bg-input border-border focus:border-accent focus:ring-accent" />
-                    {errors.description && <p className="text-sm text-destructive mt-1">{errors.description.message}</p>}
-                  </div>
-                  
-                  <div className="flex items-center gap-2">
-                    <Input id="isNewArrival" type="checkbox" {...register("isNewArrival")} className="h-4 w-4 text-primary focus:ring-primary border-border rounded" />
-                    <Label htmlFor="isNewArrival" className="text-foreground/80">Segna come "Nuovo Arrivo"</Label>
-                    {errors.isNewArrival && <p className="text-sm text-destructive mt-1">{errors.isNewArrival.message}</p>}
-                  </div>
+              <div className="border-t border-border/40 pt-4 mt-4">
+                <h3 className="text-lg font-semibold mb-2 text-primary">Caratteristiche Dettagliate</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-3">
+                    <div><Label htmlFor="referenceNumber">Referenza</Label><Input id="referenceNumber" {...register("referenceNumber")} className="mt-1 bg-input"/></div>
+                    <div><Label htmlFor="caseMaterial">Materiale Cassa</Label><Input id="caseMaterial" {...register("caseMaterial")} className="mt-1 bg-input"/></div>
+                    <div><Label htmlFor="caseDiameter">Diametro Cassa</Label><Input id="caseDiameter" {...register("caseDiameter")} placeholder="Es. 40mm" className="mt-1 bg-input"/></div>
+                    <div><Label htmlFor="caseThickness">Spessore Cassa</Label><Input id="caseThickness" {...register("caseThickness")} placeholder="Es. 12.5mm" className="mt-1 bg-input"/></div>
+                    <div><Label htmlFor="waterResistance">Impermeabilità</Label><Input id="waterResistance" {...register("waterResistance")} placeholder="Es. 100m" className="mt-1 bg-input"/></div>
+                    <div><Label htmlFor="bezelMaterial">Materiale Lunetta</Label><Input id="bezelMaterial" {...register("bezelMaterial")} className="mt-1 bg-input"/></div>
+                    <div><Label htmlFor="crystalType">Vetro</Label><Input id="crystalType" {...register("crystalType")} placeholder="Es. Zaffiro" className="mt-1 bg-input"/></div>
+                    <div><Label htmlFor="dialColor">Colore Quadrante</Label><Input id="dialColor" {...register("dialColor")} className="mt-1 bg-input"/></div>
+                    <div><Label htmlFor="dialMarkers">Indici Quadrante</Label><Input id="dialMarkers" {...register("dialMarkers")} placeholder="Es. Indici a bastone" className="mt-1 bg-input"/></div>
+                    <div><Label htmlFor="movementType">Movimento</Label><Input id="movementType" {...register("movementType")} placeholder="Es. Automatico" className="mt-1 bg-input"/></div>
+                    <div><Label htmlFor="caliber">Calibro</Label><Input id="caliber" {...register("caliber")} className="mt-1 bg-input"/></div>
+                    <div><Label htmlFor="powerReserve">Riserva di Carica</Label><Input id="powerReserve" {...register("powerReserve")} placeholder="Es. 70 ore" className="mt-1 bg-input"/></div>
+                    <div><Label htmlFor="braceletMaterial">Materiale Cinturino</Label><Input id="braceletMaterial" {...register("braceletMaterial")} className="mt-1 bg-input"/></div>
+                    <div><Label htmlFor="lugWidth">Larghezza Anse</Label><Input id="lugWidth" {...register("lugWidth")} placeholder="Es. 20mm" className="mt-1 bg-input"/></div>
+                    <div><Label htmlFor="claspType">Chiusura</Label><Input id="claspType" {...register("claspType")} className="mt-1 bg-input"/></div>
+                </div>
+                <div className="mt-3"><Label htmlFor="functions">Funzioni (separate da virgola)</Label><Textarea id="functions" {...register("functions")} className="mt-1 bg-input min-h-[60px]" placeholder="Es. Cronografo, Data, GMT"/></div>
+                <div className="mt-3"><Label htmlFor="complications">Complicazioni (separate da virgola)</Label><Textarea id="complications" {...register("complications")} className="mt-1 bg-input min-h-[60px]" placeholder="Es. Fasi Lunari, Tourbillon"/></div>
+              </div>
+              
+              <div className="mt-3">
+                <Label htmlFor="description">Descrizione</Label>
+                <Textarea id="description" {...register("description")} className="mt-1 min-h-[100px] bg-input" />
+                {errors.description && <p className="text-sm text-destructive mt-1">{errors.description.message}</p>}
+              </div>
+              
+              <div className="flex items-center gap-2 mt-3">
+                <Controller
+                    name="isNewArrival"
+                    control={control}
+                    render={({ field }) => (
+                        <Checkbox
+                            id="isNewArrival"
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                            className="h-4 w-4 text-primary focus:ring-primary border-border rounded"
+                        />
+                    )}
+                />
+                <Label htmlFor="isNewArrival" className="text-foreground/80 font-normal">Segna come "Nuovo Arrivo"</Label>
+                {errors.isNewArrival && <p className="text-sm text-destructive mt-1">{errors.isNewArrival.message}</p>}
+              </div>
 
-
-                  <DialogFooter className="mt-2 pt-4 border-t border-border/40">
-                    <DialogClose asChild>
-                       <Button type="button" variant="outline" onClick={resetFormStates}>Annulla</Button>
-                    </DialogClose>
-                    <Button type="submit" className="bg-primary hover:bg-primary/90 text-primary-foreground">{editingWatch ? "Salva Modifiche" : "Salva Orologio"}</Button>
-                  </DialogFooter>
-                </form>
-              </DialogContent>
-            </Dialog>
-        </div>
+              <DialogFooter className="mt-4 pt-4 border-t border-border/40">
+                <DialogClose asChild>
+                   <Button type="button" variant="outline" onClick={resetFormStates}>Annulla</Button>
+                </DialogClose>
+                <Button type="submit" className="bg-primary hover:bg-primary/90 text-primary-foreground">{editingWatch ? "Salva Modifiche" : "Salva Orologio"}</Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <Card className="bg-card shadow-lg">
@@ -402,9 +494,9 @@ export default function AdminOrologiPage() {
                 </TableRow>
               )) : (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                  <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                     {searchTerm ? `Nessun orologio trovato per "${searchTerm}".` :
-                    (isLoading ? "Caricamento orologi..." : "Nessun orologio nel catalogo. Inizia aggiungendone uno o popola Firestore!")}
+                    (isLoading ? "Caricamento orologi..." : "Nessun orologio nel catalogo.")}
                   </TableCell>
                 </TableRow>
               )}
@@ -414,13 +506,10 @@ export default function AdminOrologiPage() {
         </CardContent>
       </Card>
       <p className="text-center text-sm text-muted-foreground">
-        I dati degli orologi sono ora gestiti tramite Firestore. Assicurati di aver configurato correttamente `src/lib/firebase.ts` e le regole di sicurezza di Firestore.
-        La funzione `populateFirestoreWithMockDataIfNeeded()` viene chiamata all'avvio per popolare il database con dati di esempio, se vuoto.
+        I dati degli orologi sono gestiti tramite Firestore.
       </p>
     </div>
   );
 }
-
-
 
     

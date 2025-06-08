@@ -32,6 +32,7 @@ const PersonalizedRequestSchema = z.object({
   budgetMax: z.coerce.number().min(0).optional().nullable(),
   aiCriteria: z.string().max(500, {message: "La descrizione per AI non può superare i 500 caratteri."}).optional(), 
   additionalNotes: z.string().max(1000, {message: "Le note aggiuntive non possono superare i 1000 caratteri."}).optional(),
+  watchRef: z.string().optional(), // Campo nascosto per la referenza
 }).refine(data => {
   if (data.budgetMin !== null && data.budgetMin !== undefined &&
       data.budgetMax !== null && data.budgetMax !== undefined) {
@@ -98,6 +99,7 @@ export default function RequestForm() {
       desiredModel: '',
       aiCriteria: '',
       additionalNotes: '',
+      watchRef: '',
     }
   });
 
@@ -112,17 +114,28 @@ export default function RequestForm() {
   }, []);
 
   useEffect(() => {
-    // Pre-fill from query params if present (e.g., from watch detail page)
     const watchNameQuery = searchParams.get('watchName');
     const watchBrandQuery = searchParams.get('watchBrand');
-    if (watchNameQuery || watchBrandQuery) {
-      let initialCriteria = "Sto cercando informazioni o sono interessato all'acquisto di un";
+    const watchRefQuery = searchParams.get('watchRef');
+
+    if (watchNameQuery || watchBrandQuery || watchRefQuery) {
+      let initialCriteria = "Sono interessato a discutere o avviare una trattativa per l'orologio";
       if (watchBrandQuery) initialCriteria += ` ${watchBrandQuery}`;
       if (watchNameQuery) initialCriteria += ` ${watchNameQuery}`;
-      initialCriteria += ". Potete fornirmi maggiori dettagli?";
+      if (watchRefQuery && watchRefQuery !== 'undefined' && watchRefQuery !== 'null') initialCriteria += ` (Ref: ${watchRefQuery})`;
+      initialCriteria += ". Potete fornirmi maggiori dettagli o avviare una consulenza?";
       
-      if (!watch('aiCriteria')) { // Only set if not already filled (e.g. by localStorage)
+      if (!watch('aiCriteria')) {
         setValue('aiCriteria', initialCriteria);
+      }
+      if (watchBrandQuery && !watch('desiredBrand')) {
+        setValue('desiredBrand', watchBrandQuery);
+      }
+      if (watchNameQuery && !watch('desiredModel')) {
+        setValue('desiredModel', watchNameQuery);
+      }
+      if (watchRefQuery && !watch('watchRef')) {
+        setValue('watchRef', watchRefQuery);
       }
     }
   }, [searchParams, setValue, watch]);
@@ -137,8 +150,7 @@ export default function RequestForm() {
         description: actionState.message,
         variant: "default",
       });
-      // Rimuovi i query params dopo l'invio se provengono dalla pagina dettaglio
-      if (searchParams.get('watchName') || searchParams.get('watchBrand')) {
+      if (searchParams.get('watchName') || searchParams.get('watchBrand') || searchParams.get('watchRef')) {
         router.replace(pathname, { scroll: false });
       }
     } else if (actionState.message && !actionState.success && (actionState.issues || actionState.fields)) {
@@ -183,7 +195,6 @@ export default function RequestForm() {
           const newSearchParams = new URLSearchParams(searchParams.toString());
           newSearchParams.delete('fromForm');
           newSearchParams.delete('origin');
-          // Non rimuovere watchName/watchBrand qui, potrebbero servire se l'utente non invia subito
           router.replace(`${pathname}?${newSearchParams.toString()}`, { scroll: false });
 
           toast({ title: "Dati Ripristinati", description: "I dati della tua richiesta precedente sono stati ripristinati. Puoi inviarla ora." });
@@ -209,7 +220,6 @@ export default function RequestForm() {
         description: "Per inviare la richiesta devi effettuare il login o registrarti. I tuoi dati sono stati salvati temporaneamente.",
         duration: 7000,
       });
-      // Conserva i query params watchName/Brand durante il redirect
       const currentQuery = new URLSearchParams(searchParams.toString()).toString();
       router.push(`/login?redirect=${pathname}${currentQuery ? `&${currentQuery}` : ''}&fromForm=true&origin=requestForm`);
       return;
@@ -254,7 +264,7 @@ export default function RequestForm() {
         <SearchIcon className="mx-auto h-12 w-12 text-accent mb-4" />
         <CardTitle className="font-headline text-4xl text-primary">Richiesta Personalizzata</CardTitle>
         <CardDescription className="text-muted-foreground text-lg">
-          Descrivici l'orologio dei tuoi sogni. Lo troveremo per te.
+          Descrivici l'orologio dei tuoi sogni o quello che ti interessa. Lo troveremo per te.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -333,6 +343,10 @@ export default function RequestForm() {
               <Input id="desiredModel" {...register("desiredModel")} placeholder="Es. Submariner, Speedmaster" className="mt-1 bg-input border-border focus:border-accent focus:ring-accent" />
             </div>
           </div>
+          
+          {/* Campo nascosto per la referenza */}
+          <input type="hidden" {...register("watchRef")} />
+
 
           <div>
             <Label className="text-foreground/80">Fascia di Prezzo (Opzionale)</Label>
@@ -410,3 +424,5 @@ export default function RequestForm() {
     </Card>
   );
 }
+
+    
