@@ -38,11 +38,11 @@ export default function WatchNewsSection() {
 
   return (
     <section className="mt-16 pt-12 border-t border-border/40">
-      <h2 className="font-headline text-3xl md:text-4xl font-bold text-center text-foreground mb-3"> {/* Colore del titolo modificato */}
+      <h2 className="font-headline text-3xl md:text-4xl font-bold text-center text-foreground mb-3">
         Ultime <span className="text-accent">Notizie</span>
       </h2>
       <p className="text-center text-muted-foreground mb-10 max-w-xl mx-auto">
-        Rimani aggiornato con le ultime novità e tendenze dal mondo dell'alta orologeria, selezionate dalla nostra AI.
+        Rimani aggiornato con le ultime novità e tendenze dal mondo dell'alta orologeria, generate dalla nostra AI.
       </p>
 
       {isLoading && (
@@ -90,7 +90,7 @@ export default function WatchNewsSection() {
           {newsData.newsItems.map((item, index) => (
             <Card key={index} className="bg-card shadow-lg hover:shadow-primary/10 transition-shadow flex flex-col">
               <CardHeader>
-                <CardTitle className="font-headline text-xl text-primary">{item.title}</CardTitle>
+                <CardTitle className="font-headline text-xl text-accent">{item.title}</CardTitle> {/* Modificato qui: text-accent */}
               </CardHeader>
               <CardContent className="flex-grow">
                 <CardDescription className="text-foreground/80">{item.summary}</CardDescription>
@@ -109,3 +109,4 @@ export default function WatchNewsSection() {
     </section>
   );
 }
+
