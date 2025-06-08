@@ -3,6 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link'; // Import aggiunto qui
 import { onAuthStateChanged, type User } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import Header from '@/components/layout/Header';
@@ -240,3 +241,5 @@ export default function ProfiloPage() {
     </div>
   );
 }
+
+    
