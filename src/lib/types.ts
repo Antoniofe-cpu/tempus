@@ -1,4 +1,5 @@
 
+
 export interface Watch {
   id: string;
   name: string;
@@ -269,7 +270,7 @@ export interface ServiceCard {
   id: string;
   title: string;
   description: string;
-  iconUrl?: string;
+  iconUrl?: string; // iconUrl è opzionale
   link: string;
 }
 
@@ -287,5 +288,3 @@ export interface AppSettingsFirestoreData {
   defaultCurrency: string;
   updatedAt?: import('firebase/firestore').Timestamp;
 }
-
-    

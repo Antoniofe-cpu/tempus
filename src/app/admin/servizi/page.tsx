@@ -10,15 +10,11 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2, ImageUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { getServiceCards, updateServiceCard } from '@/services/serviceCardService'; 
+import { getServiceCards, updateServiceCard, uploadServiceIcon } from '@/services/serviceCardService'; 
+import type { ServiceCard as ServiceCardType } from '@/lib/types'; // Aggiunto tipo da lib/types
 
-interface ServiceCardData {
-  id: string;
-  title: string;
-  description: string;
-  iconUrl?: string; 
-  link: string;
-  iconFile?: FileList | null; // Per gestire il file selezionato
+interface ServiceCardData extends ServiceCardType { // Estende ServiceCardType
+  iconFile?: FileList | null; 
 }
 
 export default function AdminServiziPage() {
@@ -44,7 +40,7 @@ export default function AdminServiziPage() {
     fetchServices();
   }, [fetchServices]);
 
-  const handleInputChange = (id: string, field: keyof Omit<ServiceCardData, 'iconFile'>, value: string) => {
+  const handleInputChange = (id: string, field: keyof Omit<ServiceCardData, 'id' | 'iconFile'>, value: string) => {
     setServices(services.map(service =>
       service.id === id ? { ...service, [field]: value } : service
     ));
@@ -57,60 +53,39 @@ export default function AdminServiziPage() {
     ));
   };
   
-  const uploadServiceIcon = async (file: File | undefined): Promise<string | undefined> => {
-    if (!file) return undefined;
-    // Placeholder: In una implementazione reale, qui caricheresti il file su Firebase Storage
-    // e restituiresti l'URL di download.
-    console.log("Placeholder: Uploading file (non implementato):", file.name);
-    toast({
-      title: "Info Sviluppo",
-      description: `L'upload del file "${file.name}" non è ancora implementato. Verrà usato l'URL testuale se fornito, o un placeholder se l'URL testuale è vuoto.`,
-      variant: "default"
-    });
-    // Per ora, restituiamo un URL placeholder se l'upload non è implementato
-    // o l'URL originale se non vogliamo sovrascriverlo.
-    // In questo caso, lasciamo che iconUrl testuale abbia la precedenza.
-    return undefined; // Indica che l'upload non ha prodotto un nuovo URL da usare.
-  };
-
-
   const handleSave = async (serviceToSave: ServiceCardData) => {
     setSavingStates(prev => ({ ...prev, [serviceToSave.id]: true }));
     let finalIconUrl = serviceToSave.iconUrl;
 
-    if (serviceToSave.iconFile && serviceToSave.iconFile.length > 0) {
-      const uploadedUrl = await uploadServiceIcon(serviceToSave.iconFile[0]);
-      if (uploadedUrl) {
-        finalIconUrl = uploadedUrl; // Usa l'URL dell'immagine caricata se l'upload ha successo
-      } else {
-        // Se l'upload non è implementato o fallisce, ma un file è stato selezionato,
-        // si potrebbe voler dare un feedback o usare un placeholder.
-        // Attualmente, se uploadedUrl è undefined, si mantiene finalIconUrl (l'URL testuale).
-        // Se l'URL testuale è vuoto e un file è stato selezionato ma l'upload non ha prodotto un URL,
-        // finalIconUrl potrebbe rimanere vuoto, e l'icona fallback verrebbe usata nel componente ServiceCard.
-         if (!finalIconUrl) { // Solo se l'URL testuale era vuoto e l'upload non ha prodotto un URL
-           finalIconUrl = `https://placehold.co/64x64.png?text=${serviceToSave.title.substring(0,3)}`; // Placeholder generico
-         }
-      }
-    }
-
-    const serviceCardToUpdate = {
-      title: serviceToSave.title,
-      description: serviceToSave.description,
-      iconUrl: finalIconUrl || '', // Assicura che sia una stringa, anche vuota
-      link: serviceToSave.link,
-    };
-
     try {
+      if (serviceToSave.iconFile && serviceToSave.iconFile.length > 0) {
+        const fileToUpload = serviceToSave.iconFile[0];
+        const uploadedUrl = await uploadServiceIcon(fileToUpload); // Carica il file
+        finalIconUrl = uploadedUrl; // Usa l'URL dell'immagine caricata
+        toast({
+          title: "Icona Caricata",
+          description: `Icona "${fileToUpload.name}" caricata con successo.`,
+        });
+      }
+
+      const serviceCardToUpdate: Partial<Omit<ServiceCardType, 'id'>> = {
+        title: serviceToSave.title,
+        description: serviceToSave.description,
+        iconUrl: finalIconUrl || '', // Assicura che sia una stringa, anche vuota
+        link: serviceToSave.link,
+      };
+
       await updateServiceCard(serviceToSave.id, serviceCardToUpdate);
       toast({ title: "Successo", description: `Servizio "${serviceToSave.title}" salvato con successo.` });
-      // Resetta il campo file dopo il salvataggio
+      
+      // Aggiorna lo stato locale con il nuovo iconUrl e resetta iconFile
       setServices(prevServices => prevServices.map(s => 
-        s.id === serviceToSave.id ? { ...s, iconFile: null } : s
+        s.id === serviceToSave.id ? { ...s, iconUrl: finalIconUrl, iconFile: null } : s
       ));
+
     } catch (error) {
       console.error("Error saving service:", error);
-      toast({ title: "Errore", description: `Impossibile salvare il servizio "${serviceToSave.title}".`, variant: "destructive" });
+      toast({ title: "Errore", description: `Impossibile salvare il servizio "${serviceToSave.title}": ${(error as Error).message}`, variant: "destructive" });
     } finally {
       setSavingStates(prev => ({ ...prev, [serviceToSave.id]: false }));
     }
@@ -148,23 +123,28 @@ export default function AdminServiziPage() {
                   />
                 </div>
                 <div>
-                  <Label htmlFor={`iconUrl-${service.id}`} className="text-foreground/80 block mb-1.5">URL Icona/Immagine (Opzionale)</Label>
+                  <Label htmlFor={`iconUrl-${service.id}`} className="text-foreground/80 block mb-1.5">URL Icona Attuale (se presente)</Label>
                   <Input
                     id={`iconUrl-${service.id}`}
                     value={service.iconUrl || ''}
-                    onChange={(e) => handleInputChange(service.id, 'iconUrl', e.target.value)}
-                    className="bg-input border-border focus:border-accent focus:ring-accent"
-                    placeholder="https://example.com/icon.png"
+                    readOnly // L'URL viene gestito dall'upload o lasciato vuoto
+                    className="bg-input border-border focus:border-accent focus:ring-accent text-muted-foreground"
+                    placeholder="Nessuna icona caricata o URL testuale."
                     disabled={savingStates[service.id]}
                   />
+                   {service.iconUrl && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Anteprima: <img src={service.iconUrl} alt="icon preview" className="h-8 w-8 inline-block ml-2 border rounded"/>
+                    </p>
+                  )}
                 </div>
                 <div>
-                  <Label htmlFor={`iconFile-${service.id}`} className="text-foreground/80 block mb-1.5">Carica Icona (Alternativa all'URL)</Label>
+                  <Label htmlFor={`iconFile-${service.id}`} className="text-foreground/80 block mb-1.5">Carica Nuova Icona (sostituisce l'esistente)</Label>
                   <div className="flex items-center gap-2">
                     <Input
                       id={`iconFile-${service.id}`}
                       type="file"
-                      accept="image/*"
+                      accept="image/*,.svg" // Accetta immagini e SVG
                       onChange={(e) => handleFileChange(service.id, e)}
                       className="bg-input border-border focus:border-accent focus:ring-accent flex-grow"
                       disabled={savingStates[service.id]}
@@ -174,7 +154,6 @@ export default function AdminServiziPage() {
                   {service.iconFile && service.iconFile.length > 0 && (
                     <p className="text-xs text-muted-foreground mt-1">Selezionato: {service.iconFile[0].name}</p>
                   )}
-                  <p className="text-xs text-muted-foreground mt-1">Nota: L'upload effettivo non è implementato. Se fornisci un URL, avrà la precedenza.</p>
                 </div>
                 <div>
                   <Label htmlFor={`link-${service.id}`} className="text-foreground/80 block mb-1.5">Link Pagina</Label>
@@ -203,4 +182,3 @@ export default function AdminServiziPage() {
     </div>
   );
 }
-

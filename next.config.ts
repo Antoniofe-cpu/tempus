@@ -29,6 +29,12 @@ const nextConfig: NextConfig = {
         port: '',
         pathname: '/**',
       },
+      { // Aggiunto per Firebase Storage
+        protocol: 'https',
+        hostname: 'firebasestorage.googleapis.com',
+        port: '',
+        pathname: '/**',
+      },
     ],
   },
   // L'opzione experimental.allowedDevOrigins è stata rimossa perché non più riconosciuta

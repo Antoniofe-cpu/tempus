@@ -3,6 +3,7 @@
 import { initializeApp, getApps, getApp, type FirebaseApp } from 'firebase/app';
 import { getFirestore, type Firestore } from 'firebase/firestore';
 import { getAuth, type Auth } from 'firebase/auth';
+import { getStorage, type FirebaseStorage } from 'firebase/storage'; // Aggiunto import per Storage
 
 // Configurazione Firebase per il progetto "tempus-concierge"
 // IMPORTANTE: Verifica che apiKey sia quella corretta del tuo progetto Firebase.
@@ -12,7 +13,7 @@ const firebaseConfig = {
   apiKey: "AIzaSyAN0v1Fq9mDOZ8-9CKlO99o50mCrS6ByiY", // Chiave fornita dall'utente
   authDomain: "tempus-concierge.firebaseapp.com",
   projectId: "tempus-concierge",
-  storageBucket: "tempus-concierge.firebasestorage.app",
+  storageBucket: "tempus-concierge.appspot.com", // Assicurati che sia il bucket corretto, spesso è nomeprogetto.appspot.com
   messagingSenderId: "544608215639",
   appId: "1:544608215639:web:099bf420d083fa9f64f912",
   // measurementId: "G-XXXXXXXXXX" // Opzionale, se usi Google Analytics
@@ -27,6 +28,7 @@ if (!getApps().length) {
 }
 
 const db: Firestore = getFirestore(app);
-const auth: Auth = getAuth(app); // Initialize Firebase Auth
+const auth: Auth = getAuth(app);
+const storage: FirebaseStorage = getStorage(app); // Inizializza Firebase Storage
 
-export { app, db, auth };
+export { app, db, auth, storage }; // Esporta storage
