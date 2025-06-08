@@ -6,7 +6,7 @@ import Footer from '@/components/layout/Footer';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowRight, WatchIcon, GemIcon, SearchIcon, Loader2 } from 'lucide-react';
+import { ArrowRight, WatchIcon, GemIcon, SearchIcon, ShieldCheckIcon, Loader2 } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
 import { generateHeroImage } from '@/ai/flows/generate-hero-image-flow';
 
@@ -18,16 +18,17 @@ export default function HomePage() {
     async function fetchHeroImage() {
       setIsLoadingImage(true);
       try {
-        const result = await generateHeroImage({ prompt: "Immagine artistica di un meccanismo di orologio di lusso, dettagliato e illuminato in modo suggestivo." });
+        const result = await generateHeroImage({ 
+          prompt: "Un'ambientazione sofisticata che evoca il lusso e l'esclusività del servizio Tempus Concierge. Dettagli come un elegante orologio da polso su una scrivania di legno scuro, strumenti orologieri, e una luce calda e accogliente." 
+        });
         if (result.imageUrl) {
           setHeroImageUrl(result.imageUrl);
         } else {
-          // Fallback a un placeholder se la generazione fallisce o non restituisce URL
-          setHeroImageUrl("https://placehold.co/1920x1080.png?text=Loading+Image...");
+          setHeroImageUrl("https://placehold.co/1920x1080.png?text=Benvenuti+in+Tempus+Concierge");
         }
       } catch (error) {
         console.error("Failed to generate hero image:", error);
-        setHeroImageUrl("https://placehold.co/1920x1080.png?text=Error+Loading+Image");
+        setHeroImageUrl("https://placehold.co/1920x1080.png?text=Errore+Caricamento+Immagine");
       } finally {
         setIsLoadingImage(false);
       }
@@ -49,21 +50,21 @@ export default function HomePage() {
             {heroImageUrl && (
               <Image
                 src={heroImageUrl}
-                alt="Dettaglio meccanismo orologio di lusso generato da AI"
+                alt="Servizio esclusivo Tempus Concierge per orologi di lusso"
                 fill
                 style={{ objectFit: 'cover' }}
                 quality={80}
-                // Priority è rimosso perché l'immagine è caricata client-side
-                // data-ai-hint non è più necessario come prima se l'immagine è generata dinamicamente
+                data-ai-hint="orologi lusso scrivania elegante"
               />
             )}
-             {!heroImageUrl && !isLoadingImage && ( // Mostra un placeholder fisso se tutto fallisce e non sta caricando
+             {!heroImageUrl && !isLoadingImage && (
               <Image
-                src="https://placehold.co/1920x1080.png?text=Luxury+Watches"
-                alt="Placeholder orologio di lusso"
+                src="https://placehold.co/1920x1080.png?text=Tempus+Concierge"
+                alt="Placeholder Tempus Concierge"
                 fill
                 style={{ objectFit: 'cover' }}
                 quality={80}
+                data-ai-hint="orologi lusso scrivania"
               />
             )}
           </div>
@@ -73,7 +74,7 @@ export default function HomePage() {
               Benvenuto in <span className="text-accent">Tempus Concierge</span>
             </h1>
             <p className="text-xl md:text-2xl text-foreground/80 max-w-3xl mx-auto mb-10">
-              Questo è un testo di prova per verificare il push da Firebase Studio! Troviamo orologi unici.
+              Esplora il mondo dell'alta orologeria con Tempus Concierge. Offriamo un servizio esclusivo per trovare, acquistare e vendere orologi da collezione e di lusso, con consulenza personalizzata e accesso a pezzi unici.
             </p>
             <div className="space-x-0 space-y-4 sm:space-y-0 sm:space-x-4">
               <Button asChild size="lg" className="bg-accent hover:bg-accent/90 text-accent-foreground font-semibold group">
@@ -113,10 +114,10 @@ export default function HomePage() {
                 </p>
               </div>
               <div className="flex flex-col items-center text-center p-6 bg-card rounded-lg shadow-xl hover:shadow-accent/20 transition-shadow duration-300">
-                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-accent mb-4"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/><path d="m9 12 2 2 4-4"/></svg>
-                <h3 className="font-headline text-2xl font-semibold mb-2">Servizio Discreto</h3>
+                <ShieldCheckIcon className="h-12 w-12 text-accent mb-4" />
+                <h3 className="font-headline text-2xl font-semibold mb-2">Servizio Discreto e Sicuro</h3>
                 <p className="text-foreground/70">
-                  Garantiamo la massima discrezione e professionalità in ogni fase del processo di acquisto.
+                  Garantiamo la massima discrezione e professionalità in ogni fase del processo di acquisto e consulenza.
                 </p>
               </div>
             </div>
