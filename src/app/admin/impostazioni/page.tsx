@@ -251,7 +251,7 @@ export default function AdminImpostazioniPage() {
                           type="file"
                           accept="image/*,.svg"
                           onChange={(e) => handleIconFileChange(e, field.setFileState)}
-                          className="bg-input border-border focus:border-accent focus:ring-accent flex-grow"
+                          className="bg-input border-border focus:border-accent focus:ring-accent w-full max-w-md"
                           disabled={isSaving}
                       />
                       <ImageUp className="h-5 w-5 text-muted-foreground flex-shrink-0"/>
@@ -302,5 +302,5 @@ export default function AdminImpostazioniPage() {
     </div>
   );
 }
-
     
+
