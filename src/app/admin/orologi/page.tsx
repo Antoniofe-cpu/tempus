@@ -33,10 +33,11 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogTrigger, // Assicurati che AlertDialogTrigger sia importato qui
 } from "@/components/ui/alert-dialog";
 import { getWatches, addWatchService, updateWatchService, deleteWatchService, populateFirestoreWithMockDataIfNeeded } from '@/services/watchService';
 import { useToast } from "@/hooks/use-toast";
-import { Checkbox } from '@/components/ui/checkbox'; // Aggiunto Checkbox
+import { Checkbox } from '@/components/ui/checkbox';
 
 const currentYear = new Date().getFullYear();
 
@@ -65,6 +66,7 @@ const WatchFormSchema = z.object({
   braceletMaterial: z.string().optional(),
   claspType: z.string().optional(),
   functions: z.string().optional(), // Stringa separata da virgole, verrà convertita in array
+  additionalImageUrls: z.string().optional(), // Stringa con URL separati da a capo
   additionalImageFiles: z.any().optional(), // This will hold the FileList object from the file input
   yearOfProduction: z.coerce.number().int().min(1800, { message: "L'anno di produzione non è valido." }).max(currentYear, { message: "L'anno di produzione non può essere futuro." }).optional().nullable(),
   complications: z.string().optional(), // Stringa separata da virgole
@@ -127,12 +129,12 @@ export default function AdminOrologiPage() {
           condition: editingWatch.condition || '',
           isNewArrival: editingWatch.isNewArrival || false,
           functions: editingWatch.functions?.join(', ') || '',
-          // additionalImageUrls: editingWatch.additionalImageUrls?.join('\n') || '', // No longer used for file upload
+          additionalImageUrls: editingWatch.additionalImageUrls?.join('\n') || '',
           complications: editingWatch.complications?.join(', ') || '',
           yearOfProduction: editingWatch.yearOfProduction ?? undefined,
         });
       } else {
-         reset({ // Reset to default values for new watch
+         reset({ 
             name: '', brand: '', price: 0, stock: 0,
             imageUrl: 'https://placehold.co/600x400.png', description: '',
             dataAiHint: '', rarity: '', condition: '', isNewArrival: false,
@@ -146,22 +148,32 @@ export default function AdminOrologiPage() {
   }, [isDialogOpen, editingWatch, reset]);
 
 
-  // TODO: Implement Firebase Storage upload logic here for data.additionalImageFiles
   const uploadAdditionalImages = async (files: FileList | null): Promise<string[] | undefined> => {
     if (!files || files.length === 0) return undefined;
-    // Placeholder: Replace with actual upload logic
-    console.log("Uploading files:", files);
-    return undefined; // Return uploaded URLs
+    // Placeholder: Replace with actual upload logic to Firebase Storage
+    console.log("Uploading files (placeholder):", files);
+    // Example: Iterate files, upload each, and collect URLs
+    // For now, returning undefined as upload is not implemented
+    toast({ title: "Info Sviluppo", description: "La funzione di upload immagini non è ancora implementata. Gli URL testuali verranno usati.", variant: "default"});
+    return undefined; 
   };
 
   const onSubmit = async (data: WatchFormData) => {
     try {
       const functionsArray = data.functions ? data.functions.split(',').map(f => f.trim()).filter(f => f) : undefined;
       const complicationsArray = data.complications ? data.complications.split(',').map(c => c.trim()).filter(c => c) : undefined;
-      const additionalImageUrlsArray = data.additionalImageUrls ? data.additionalImageUrls.split('\n').map(url => url.trim()).filter(url => url) : undefined;
+      let additionalImageUrlsArray = data.additionalImageUrls ? data.additionalImageUrls.split('\n').map(url => url.trim()).filter(url => url) : undefined;
 
-      // Handle file upload for additional images
       const uploadedImageUrls = await uploadAdditionalImages(data.additionalImageFiles);
+      
+      // Usa gli URL caricati se disponibili, altrimenti quelli dal textarea.
+      // Se in modifica e non sono stati caricati nuovi file, mantieni gli URL esistenti (se ci sono).
+      if (uploadedImageUrls && uploadedImageUrls.length > 0) {
+        additionalImageUrlsArray = uploadedImageUrls;
+      } else if (editingWatch && !uploadedImageUrls && editingWatch.additionalImageUrls && editingWatch.additionalImageUrls.length > 0) {
+        additionalImageUrlsArray = editingWatch.additionalImageUrls;
+      }
+
 
       const watchPayload = {
         name: data.name,
@@ -187,10 +199,7 @@ export default function AdminOrologiPage() {
         braceletMaterial: data.braceletMaterial,
         claspType: data.claspType,
         functions: functionsArray,
-        additionalImageUrls: uploadedImageUrls || additionalImageUrlsArray, // Use uploaded URLs if available, otherwise use text area URLs
-        // If editing and no new files are uploaded, keep existing URLs
-        ...(editingWatch && !uploadedImageUrls && editingWatch.additionalImageUrls && { additionalImageUrls: editingWatch.additionalImageUrls }),
-
+        additionalImageUrls: additionalImageUrlsArray,
         yearOfProduction: data.yearOfProduction ?? undefined,
         complications: complicationsArray,
         crystalType: data.crystalType,
@@ -198,7 +207,6 @@ export default function AdminOrologiPage() {
         bezelMaterial: data.bezelMaterial,
       };
 
-      // Rimuovi chiavi con valore undefined dal payload per evitare problemi con Firestore
       Object.keys(watchPayload).forEach(key => {
         const k = key as keyof typeof watchPayload;
         if (watchPayload[k] === undefined || watchPayload[k] === '') {
@@ -231,7 +239,7 @@ export default function AdminOrologiPage() {
 
   const handleAddNewClick = () => {
     setEditingWatch(null);
-    reset({ // Assicurati che tutti i campi siano resettati
+    reset({
         name: '', brand: '', price: 0, stock: 0,
         imageUrl: 'https://placehold.co/600x400.png', description: '',
         dataAiHint: '', rarity: '', condition: '', isNewArrival: false,
@@ -239,6 +247,7 @@ export default function AdminOrologiPage() {
         movementType: '', caliber: '', powerReserve: '', dialColor: '', dialMarkers: '',
         braceletMaterial: '', claspType: '', functions: '', additionalImageUrls: '',
         yearOfProduction: undefined, complications: '', crystalType: '', lugWidth: '', bezelMaterial: '',
+        additionalImageFiles: undefined,
     });
     setIsDialogOpen(true);
   };
@@ -303,7 +312,7 @@ export default function AdminOrologiPage() {
                 {editingWatch ? "Modifica i dettagli dell'orologio esistente." : "Inserisci i dettagli del nuovo orologio da aggiungere al catalogo."}
               </DialogDesc>
             </DialogHeader>
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 py-4 px-1"> {/* Reduced padding for more space */}
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 py-4 px-1">
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -340,8 +349,15 @@ export default function AdminOrologiPage() {
               <div>
                 <Label htmlFor="additionalImageUrls">URL Immagini Aggiuntive (una per riga)</Label>
                 <Textarea id="additionalImageUrls" {...register("additionalImageUrls")} className="mt-1 min-h-[80px] bg-input" placeholder="https://placehold.co/600x400_1.png&#10;https://placehold.co/600x400_2.png"/>
-                {errors.additionalImageUrls && <p className="text-sm text-destructive mt-1">{errors.additionalImageUrls.message}</p>}
+                {errors.additionalImageUrls && <p className="text-sm text-destructive mt-1">{errors.additionalImageUrls.message as string}</p>}
               </div>
+              
+              <div>
+                <Label htmlFor="additionalImageFiles">Carica Immagini Aggiuntive</Label>
+                <Input id="additionalImageFiles" type="file" {...register("additionalImageFiles")} className="mt-1 bg-input" multiple />
+                <p className="text-xs text-muted-foreground mt-1">Nota: L'upload effettivo su server non è ancora implementato. Verranno usati gli URL testuali se questo campo è vuoto.</p>
+              </div>
+
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -525,5 +541,7 @@ export default function AdminOrologiPage() {
     </div>
   );
 }
+
+    
 
     
