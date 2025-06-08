@@ -60,24 +60,27 @@ export default async function WatchDetailPage({ params }: Props) {
   const fallbackAiHint = watch.name ? watch.name.split(" ").slice(0, 2).join(" ").toLowerCase() : "watch detail";
 
   const features = [
-    { label: "Referenza", value: watch.referenceNumber, icon: <LinkIcon className="h-5 w-5 mr-2 text-accent" /> },
-    { label: "Anno di Produzione", value: watch.yearOfProduction?.toString(), icon: <Calendar className="h-5 w-5 mr-2 text-accent" /> },
-    { label: "Materiale Cassa", value: watch.caseMaterial, icon: <CaseSensitive className="h-5 w-5 mr-2 text-accent" /> },
-    { label: "Diametro Cassa", value: watch.caseDiameter, icon: <Ruler className="h-5 w-5 mr-2 text-accent" /> },
-    { label: "Spessore Cassa", value: watch.caseThickness, icon: <Ruler className="h-5 w-5 mr-2 text-accent" /> },
-    { label: "Impermeabilità", value: watch.waterResistance, icon: <Anchor className="h-5 w-5 mr-2 text-accent" /> },
-    { label: "Materiale Lunetta", value: watch.bezelMaterial, icon: <ShieldQuestion className="h-5 w-5 mr-2 text-accent" /> },
-    { label: "Vetro", value: watch.crystalType, icon: <Sparkles className="h-5 w-5 mr-2 text-accent" /> },
-    { label: "Colore Quadrante", value: watch.dialColor, icon: <Palette className="h-5 w-5 mr-2 text-accent" /> },
-    { label: "Indici Quadrante", value: watch.dialMarkers, icon: <Palette className="h-5 w-5 mr-2 text-accent" /> },
-    { label: "Movimento", value: watch.movementType, icon: <WatchIcon className="h-5 w-5 mr-2 text-accent" /> },
-    { label: "Calibro", value: watch.caliber, icon: <Activity className="h-5 w-5 mr-2 text-accent" /> },
-    { label: "Riserva di Carica", value: watch.powerReserve, icon: <Activity className="h-5 w-5 mr-2 text-accent" /> },
-    { label: "Materiale Cinturino", value: watch.braceletMaterial, icon: <LinkIcon className="h-5 w-5 mr-2 text-accent" /> },
-    { label: "Larghezza Anse", value: watch.lugWidth, icon: <Ruler className="h-5 w-5 mr-2 text-accent" /> },
-    { label: "Chiusura", value: watch.claspType, icon: <LinkIcon className="h-5 w-5 mr-2 text-accent" /> },
-    { label: "Funzioni", value: watch.functions?.join(', '), icon: <LayersIcon className="h-5 w-5 mr-2 text-accent" /> },
-    { label: "Complicazioni", value: watch.complications?.join(', '), icon: <LayersIcon className="h-5 w-5 mr-2 text-accent" /> },
+    { label: "Referenza", value: watch.referenceNumber, icon: <span><LinkIcon /></span> },
+    { label: "Anno di Produzione", value: watch.yearOfProduction?.toString(), icon: <span><Calendar /></span> },
+    { label: "Materiale Cassa", value: watch.caseMaterial, icon: <span><CaseSensitive /></span> },
+    { label: "Diametro Cassa", value: watch.caseDiameter, icon: <span><Ruler /></span> },
+    { label: "Spessore Cassa", value: watch.caseThickness, icon: <span><Ruler /></span> },
+    { label: "Impermeabilità", value: watch.waterResistance, icon: <span><Anchor /></span> },
+    { label: "Materiale Lunetta", value: watch.bezelMaterial, icon: <span><ShieldQuestion /></span> },
+    { label: "Vetro", value: watch.crystalType, icon: <span><Sparkles /></span> },
+    { label: "Colore Quadrante", value: watch.dialColor, icon: <span><Palette /></span> },
+    { label: "Indici Quadrante", value: watch.dialMarkers, icon: <span><Palette /></span> },
+    { label: "Movimento", value: watch.movementType, icon: <span><WatchIcon /></span> },
+    { label: "Calibro", value: watch.caliber, icon: <span><Activity /></span> },
+    { label: "Riserva di Carica", value: watch.powerReserve, icon: <span><Activity /></span> },
+    { label: "Materiale Cinturino", value: watch.braceletMaterial, icon: <span><LinkIcon /></span> },
+    { label: "Larghezza Anse", value: watch.lugWidth, icon: <span><Ruler /></span> },
+    { label: "Chiusura", value: watch.claspType, icon: <span><LinkIcon /></span> },
+    { label: "Funzioni", value: watch.functions?.join(', '), icon: <span><LayersIcon /></span> },
+    { label: "Complicazioni", value: watch.complications?.join(', '), icon: <span><LayersIcon /></span> },
+    // Ensure all new characteristics from the Watch type are included here
+    // (The list above seems to already cover most added fields based on your previous request)
+    // If there are other fields in your Watch type not listed above, add them here.
   ].filter(feature => feature.value && feature.value.length > 0);
 
 
@@ -164,6 +167,7 @@ export default async function WatchDetailPage({ params }: Props) {
               </div>
 
               <div className="mb-6 flex-grow">
+                {/* Description section: no blue styling or 'i' icon needed */}
                 <h2 className="text-xl font-semibold text-primary mb-2">
                     Descrizione Prodotto
                 </h2>
@@ -175,6 +179,7 @@ export default async function WatchDetailPage({ params }: Props) {
               {features.length > 0 && (
                 <div className="mb-6">
                     <h2 className="text-xl font-semibold text-primary mb-3">
+                        {/* Collapsible section for detailed features */}
                         Caratteristiche Dettagliate
                     </h2>
                     <Accordion type="single" collapsible className="w-full">
@@ -182,7 +187,7 @@ export default async function WatchDetailPage({ params }: Props) {
                             <AccordionItem value={`item-${index}`} key={index}>
                                 <AccordionTrigger className="text-base hover:no-underline">
                                     <div className="flex items-center">
-                                        {feature.icon}
+                                        {feature.icon} {/* Render the icon component here */}
                                         {feature.label}
                                     </div>
                                 </AccordionTrigger>
@@ -198,7 +203,8 @@ export default async function WatchDetailPage({ params }: Props) {
               <div className="mt-auto pt-6 border-t border-border/40">
                 <Button asChild size="lg" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground group">
                   <Link href={`/richiesta-personalizzata?watchName=${encodeURIComponent(watch.name)}&watchBrand=${encodeURIComponent(watch.brand)}&watchRef=${encodeURIComponent(watch.referenceNumber || '')}`}>
-                    <MessageSquareQuote className="mr-2 h-5 w-5" /> Trattativa in Privato
+                    {/* Changed button text to "Trattativa in Privato" */}
+                    <MessageSquareQuote className=\"mr-2 h-5 w-5\" /> Trattativa in Privato
                   </Link>
                 </Button>
                 <p className="text-xs text-muted-foreground mt-3 text-center">

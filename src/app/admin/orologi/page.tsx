@@ -65,8 +65,8 @@ const WatchFormSchema = z.object({
   braceletMaterial: z.string().optional(),
   claspType: z.string().optional(),
   functions: z.string().optional(), // Stringa separata da virgole, verrà convertita in array
-  additionalImageUrls: z.string().optional(), // Stringa separata da a capo, verrà convertita in array
-  yearOfProduction: z.coerce.number().int().min(1800).max(currentYear).optional().nullable(),
+  additionalImageFiles: z.any().optional(), // This will hold the FileList object from the file input
+  yearOfProduction: z.coerce.number().int().min(1800, { message: "L'anno di produzione non è valido." }).max(currentYear, { message: "L'anno di produzione non può essere futuro." }).optional().nullable(),
   complications: z.string().optional(), // Stringa separata da virgole
   crystalType: z.string().optional(),
   lugWidth: z.string().optional(),
@@ -92,7 +92,7 @@ export default function AdminOrologiPage() {
       referenceNumber: '', caseMaterial: '', caseDiameter: '', caseThickness: '', waterResistance: '',
       movementType: '', caliber: '', powerReserve: '', dialColor: '', dialMarkers: '',
       braceletMaterial: '', claspType: '', functions: '', additionalImageUrls: '',
-      yearOfProduction: undefined, complications: '', crystalType: '', lugWidth: '', bezelMaterial: '',
+      yearOfProduction: undefined, complications: '', crystalType: '', lugWidth: '', bezelMaterial: '', additionalImageFiles: undefined,
     }
   });
 
@@ -127,7 +127,7 @@ export default function AdminOrologiPage() {
           condition: editingWatch.condition || '',
           isNewArrival: editingWatch.isNewArrival || false,
           functions: editingWatch.functions?.join(', ') || '',
-          additionalImageUrls: editingWatch.additionalImageUrls?.join('\n') || '',
+          // additionalImageUrls: editingWatch.additionalImageUrls?.join('\n') || '', // No longer used for file upload
           complications: editingWatch.complications?.join(', ') || '',
           yearOfProduction: editingWatch.yearOfProduction ?? undefined,
         });
@@ -137,8 +137,8 @@ export default function AdminOrologiPage() {
             imageUrl: 'https://placehold.co/600x400.png', description: '',
             dataAiHint: '', rarity: '', condition: '', isNewArrival: false,
             referenceNumber: '', caseMaterial: '', caseDiameter: '', caseThickness: '', waterResistance: '',
-            movementType: '', caliber: '', powerReserve: '', dialColor: '', dialMarkers: '',
-            braceletMaterial: '', claspType: '', functions: '', additionalImageUrls: '',
+            movementType: '', caliber: '', powerReserve: '', dialColor: '', dialMarkers: '', braceletMaterial: '', claspType: '',
+            functions: '', additionalImageUrls: '', additionalImageFiles: undefined,
             yearOfProduction: undefined, complications: '', crystalType: '', lugWidth: '', bezelMaterial: '',
         });
       }
@@ -146,11 +146,22 @@ export default function AdminOrologiPage() {
   }, [isDialogOpen, editingWatch, reset]);
 
 
+  // TODO: Implement Firebase Storage upload logic here for data.additionalImageFiles
+  const uploadAdditionalImages = async (files: FileList | null): Promise<string[] | undefined> => {
+    if (!files || files.length === 0) return undefined;
+    // Placeholder: Replace with actual upload logic
+    console.log("Uploading files:", files);
+    return undefined; // Return uploaded URLs
+  };
+
   const onSubmit = async (data: WatchFormData) => {
     try {
       const functionsArray = data.functions ? data.functions.split(',').map(f => f.trim()).filter(f => f) : undefined;
       const complicationsArray = data.complications ? data.complications.split(',').map(c => c.trim()).filter(c => c) : undefined;
       const additionalImageUrlsArray = data.additionalImageUrls ? data.additionalImageUrls.split('\n').map(url => url.trim()).filter(url => url) : undefined;
+
+      // Handle file upload for additional images
+      const uploadedImageUrls = await uploadAdditionalImages(data.additionalImageFiles);
 
       const watchPayload = {
         name: data.name,
@@ -176,7 +187,10 @@ export default function AdminOrologiPage() {
         braceletMaterial: data.braceletMaterial,
         claspType: data.claspType,
         functions: functionsArray,
-        additionalImageUrls: additionalImageUrlsArray,
+        additionalImageUrls: uploadedImageUrls || additionalImageUrlsArray, // Use uploaded URLs if available, otherwise use text area URLs
+        // If editing and no new files are uploaded, keep existing URLs
+        ...(editingWatch && !uploadedImageUrls && editingWatch.additionalImageUrls && { additionalImageUrls: editingWatch.additionalImageUrls }),
+
         yearOfProduction: data.yearOfProduction ?? undefined,
         complications: complicationsArray,
         crystalType: data.crystalType,
@@ -348,7 +362,7 @@ export default function AdminOrologiPage() {
                 </div>
                 <div>
                   <Label htmlFor="yearOfProduction">Anno di Produzione</Label>
-                  <Input id="yearOfProduction" type="number" {...register("yearOfProduction")} placeholder={`Es. ${currentYear}`} className="mt-1 bg-input"/>
+                  <Input id="yearOfProduction" type="number" {...register("yearOfProduction")} placeholder={`Es. ${currentYear}`} className="mt-1 bg-input" />
                   {errors.yearOfProduction && <p className="text-sm text-destructive mt-1">{errors.yearOfProduction.message}</p>}
                 </div>
               </div>
@@ -357,20 +371,20 @@ export default function AdminOrologiPage() {
                 <h3 className="text-lg font-semibold mb-2 text-primary">Caratteristiche Dettagliate</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-3">
                     <div><Label htmlFor="referenceNumber">Referenza</Label><Input id="referenceNumber" {...register("referenceNumber")} className="mt-1 bg-input"/></div>
-                    <div><Label htmlFor="caseMaterial">Materiale Cassa</Label><Input id="caseMaterial" {...register("caseMaterial")} className="mt-1 bg-input"/></div>
+                    <div><Label htmlFor="caseMaterial">Materiale Cassa</Label><Input id="caseMaterial" {...register("caseMaterial")} className="mt-1 bg-input" /></div>
                     <div><Label htmlFor="caseDiameter">Diametro Cassa</Label><Input id="caseDiameter" {...register("caseDiameter")} placeholder="Es. 40mm" className="mt-1 bg-input"/></div>
                     <div><Label htmlFor="caseThickness">Spessore Cassa</Label><Input id="caseThickness" {...register("caseThickness")} placeholder="Es. 12.5mm" className="mt-1 bg-input"/></div>
                     <div><Label htmlFor="waterResistance">Impermeabilità</Label><Input id="waterResistance" {...register("waterResistance")} placeholder="Es. 100m" className="mt-1 bg-input"/></div>
                     <div><Label htmlFor="bezelMaterial">Materiale Lunetta</Label><Input id="bezelMaterial" {...register("bezelMaterial")} className="mt-1 bg-input"/></div>
                     <div><Label htmlFor="crystalType">Vetro</Label><Input id="crystalType" {...register("crystalType")} placeholder="Es. Zaffiro" className="mt-1 bg-input"/></div>
-                    <div><Label htmlFor="dialColor">Colore Quadrante</Label><Input id="dialColor" {...register("dialColor")} className="mt-1 bg-input"/></div>
+                    <div><Label htmlFor="dialColor">Colore Quadrante</Label><Input id="dialColor" {...register("dialColor")} className="mt-1 bg-input" /></div>
                     <div><Label htmlFor="dialMarkers">Indici Quadrante</Label><Input id="dialMarkers" {...register("dialMarkers")} placeholder="Es. Indici a bastone" className="mt-1 bg-input"/></div>
                     <div><Label htmlFor="movementType">Movimento</Label><Input id="movementType" {...register("movementType")} placeholder="Es. Automatico" className="mt-1 bg-input"/></div>
                     <div><Label htmlFor="caliber">Calibro</Label><Input id="caliber" {...register("caliber")} className="mt-1 bg-input"/></div>
                     <div><Label htmlFor="powerReserve">Riserva di Carica</Label><Input id="powerReserve" {...register("powerReserve")} placeholder="Es. 70 ore" className="mt-1 bg-input"/></div>
-                    <div><Label htmlFor="braceletMaterial">Materiale Cinturino</Label><Input id="braceletMaterial" {...register("braceletMaterial")} className="mt-1 bg-input"/></div>
+                    <div><Label htmlFor="braceletMaterial">Materiale Cinturino</Label><Input id="braceletMaterial" {...register("braceletMaterial")} className="mt-1 bg-input" /></div>
                     <div><Label htmlFor="lugWidth">Larghezza Anse</Label><Input id="lugWidth" {...register("lugWidth")} placeholder="Es. 20mm" className="mt-1 bg-input"/></div>
-                    <div><Label htmlFor="claspType">Chiusura</Label><Input id="claspType" {...register("claspType")} className="mt-1 bg-input"/></div>
+                    <div><Label htmlFor="claspType">Chiusura</Label><Input id="claspType" {...register("claspType")} className="mt-1 bg-input" /></div>
                 </div>
                 <div className="mt-3"><Label htmlFor="functions">Funzioni (separate da virgola)</Label><Textarea id="functions" {...register("functions")} className="mt-1 bg-input min-h-[60px]" placeholder="Es. Cronografo, Data, GMT"/></div>
                 <div className="mt-3"><Label htmlFor="complications">Complicazioni (separate da virgola)</Label><Textarea id="complications" {...register("complications")} className="mt-1 bg-input min-h-[60px]" placeholder="Es. Fasi Lunari, Tourbillon"/></div>

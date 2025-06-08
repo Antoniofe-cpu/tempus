@@ -90,10 +90,14 @@ export default function WatchNewsSection() {
           {newsData.newsItems.map((item, index) => (
             <Card key={index} className="bg-card shadow-lg hover:shadow-primary/10 transition-shadow flex flex-col">
               <CardHeader>
-                <CardTitle className="font-headline text-xl text-accent">{item.title}</CardTitle> {/* Modificato qui: text-accent */}
+                <CardTitle className="font-headline text-xl text-accent">{item.title}</CardTitle>
               </CardHeader>
               <CardContent className="flex-grow">
                 <CardDescription className="text-foreground/80">{item.summary}</CardDescription>
+                <div className="mt-3 pt-3 border-t border-border/20 text-xs text-muted-foreground">
+                  <p>Data: {item.publishedDate}</p>
+                  {item.sourceName && <p>Fonte: {item.sourceName}</p>}
+                </div>
               </CardContent>
             </Card>
           ))}
