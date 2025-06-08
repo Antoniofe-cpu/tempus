@@ -19,14 +19,12 @@ export default function HomePage() {
         <section className="relative py-20 md:py-32 text-center overflow-hidden min-h-[400px] md:min-h-[500px] flex items-center justify-center">
           <div className="absolute inset-0 opacity-30">
             <Image
-              // Aggiornato con l'immagine specificata dall'utente
               src="/Gemini_Generated_Image_h7li38h7li38h7li.jpeg" 
               alt="Elegante collezione di orologi Tempus Concierge"
               fill
               style={{ objectFit: 'cover' }}
               quality={80}
               priority
-              // Aggiornato data-ai-hint per l'immagine fornita
               data-ai-hint="collezione orologi lusso"
             />
           </div>
