@@ -24,12 +24,9 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  // Aggiunto per risolvere l'avviso sulle richieste cross-origin in ambiente di sviluppo Firebase Studio
-  experimental: {
-    allowedDevOrigins: [
-      'https://6000-firebase-studio-1749300889981.cluster-6frnii43o5blcu522sivebzpii.cloudworkstations.dev',
-    ],
-  },
+  // L'opzione experimental.allowedDevOrigins è stata rimossa perché non più riconosciuta
+  // da Next.js 15.3.3. Se problemi di CORS dovessero ripresentarsi in sviluppo,
+  // si dovrà cercare una soluzione alternativa compatibile con la versione attuale di Next.js.
 };
 
 export default nextConfig;
