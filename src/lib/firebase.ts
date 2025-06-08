@@ -9,7 +9,7 @@ import { getAuth, type Auth } from 'firebase/auth';
 // L'errore auth/configuration-not-found spesso dipende da una apiKey errata
 // o dal provider Email/Password non abilitato nella console Firebase.
 const firebaseConfig = {
-  apiKey: "AIzaSyAN0v1Fq9mDOZ8-9CKlO99o50mCrS6ByiY", // <<< VERIFICA QUESTA API KEY!
+  apiKey: "AIzaSyAN0v1Fq9mDOZ8-9CKlO99o50mCrS6ByiY", // Chiave fornita dall'utente
   authDomain: "tempus-concierge.firebaseapp.com",
   projectId: "tempus-concierge",
   storageBucket: "tempus-concierge.firebasestorage.app",
