@@ -8,6 +8,7 @@ import { auth } from '@/lib/firebase';
 import AdminSidebar from '@/components/layout/AdminSidebar';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button'; // Import mancante aggiunto qui
 
 // export const metadata: Metadata = { // metadata non può essere usato in Client Component, spostato o rimosso
 //   title: 'Admin Dashboard - Tempus Concierge',
