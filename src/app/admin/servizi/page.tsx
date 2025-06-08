@@ -1,72 +1,118 @@
+
 // src/app/admin/servizi/page.tsx
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, type ChangeEvent } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2 } from "lucide-react";
+import { Loader2, ImageUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { getServiceCards, updateServiceCard } from '@/services/serviceCardService'; // Import Firestore service functions
+import { getServiceCards, updateServiceCard } from '@/services/serviceCardService'; 
 
-// Define the type for a service card (ensure this matches the service file)
 interface ServiceCardData {
   id: string;
   title: string;
   description: string;
-  iconUrl?: string; // Optional image/icon URL
+  iconUrl?: string; 
   link: string;
+  iconFile?: FileList | null; // Per gestire il file selezionato
 }
 
-// Mock data for initial services (replace with Firestore logic later)
 export default function AdminServiziPage() {
   const [services, setServices] = useState<ServiceCardData[]>([]);
-  const [isLoading, setIsLoading] = useState(true); // Start with loading true
-  const [isSaving, setIsSaving] = useState(false); // State for saving process
+  const [isLoading, setIsLoading] = useState(true); 
+  const [savingStates, setSavingStates] = useState<Record<string, boolean>>({});
   const { toast } = useToast();
 
   const fetchServices = useCallback(async () => {
     setIsLoading(true);
     try {
-      // Replace with Firestore fetch logic
       const data = await getServiceCards();
-      // Sort services if needed, e.g., alphabetically by title or by a predefined order
-      setServices(data); // Assuming getServiceCards returns ServiceCardData[]
+      setServices(data.map(s => ({ ...s, iconFile: null }))); 
     } catch (error) {
       console.error("Error fetching services:", error);
       toast({ title: "Errore", description: "Impossibile caricare i dati dei servizi.", variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
-    // Add dependencies if any state variables are used inside useCallback that could change
   }, [toast]);
 
   useEffect(() => {
     fetchServices();
   }, [fetchServices]);
 
-  // Handle input changes for a specific service
-  const handleInputChange = (id: string, field: keyof ServiceCardData, value: string) => {
+  const handleInputChange = (id: string, field: keyof Omit<ServiceCardData, 'iconFile'>, value: string) => {
     setServices(services.map(service =>
       service.id === id ? { ...service, [field]: value } : service
     ));
   };
 
-  // TODO: Implement saving services to Firestore
-  const handleSave = async (serviceToSave: ServiceCardData) => { // Renamed from service to serviceToSave for clarity
-    setIsSaving(true); // Start saving state
+  const handleFileChange = (id: string, event: ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    setServices(services.map(service =>
+      service.id === id ? { ...service, iconFile: files } : service
+    ));
+  };
+  
+  const uploadServiceIcon = async (file: File | undefined): Promise<string | undefined> => {
+    if (!file) return undefined;
+    // Placeholder: In una implementazione reale, qui caricheresti il file su Firebase Storage
+    // e restituiresti l'URL di download.
+    console.log("Placeholder: Uploading file (non implementato):", file.name);
+    toast({
+      title: "Info Sviluppo",
+      description: `L'upload del file "${file.name}" non è ancora implementato. Verrà usato l'URL testuale se fornito, o un placeholder se l'URL testuale è vuoto.`,
+      variant: "default"
+    });
+    // Per ora, restituiamo un URL placeholder se l'upload non è implementato
+    // o l'URL originale se non vogliamo sovrascriverlo.
+    // In questo caso, lasciamo che iconUrl testuale abbia la precedenza.
+    return undefined; // Indica che l'upload non ha prodotto un nuovo URL da usare.
+  };
+
+
+  const handleSave = async (serviceToSave: ServiceCardData) => {
+    setSavingStates(prev => ({ ...prev, [serviceToSave.id]: true }));
+    let finalIconUrl = serviceToSave.iconUrl;
+
+    if (serviceToSave.iconFile && serviceToSave.iconFile.length > 0) {
+      const uploadedUrl = await uploadServiceIcon(serviceToSave.iconFile[0]);
+      if (uploadedUrl) {
+        finalIconUrl = uploadedUrl; // Usa l'URL dell'immagine caricata se l'upload ha successo
+      } else {
+        // Se l'upload non è implementato o fallisce, ma un file è stato selezionato,
+        // si potrebbe voler dare un feedback o usare un placeholder.
+        // Attualmente, se uploadedUrl è undefined, si mantiene finalIconUrl (l'URL testuale).
+        // Se l'URL testuale è vuoto e un file è stato selezionato ma l'upload non ha prodotto un URL,
+        // finalIconUrl potrebbe rimanere vuoto, e l'icona fallback verrebbe usata nel componente ServiceCard.
+         if (!finalIconUrl) { // Solo se l'URL testuale era vuoto e l'upload non ha prodotto un URL
+           finalIconUrl = `https://placehold.co/64x64.png?text=${serviceToSave.title.substring(0,3)}`; // Placeholder generico
+         }
+      }
+    }
+
+    const serviceCardToUpdate = {
+      title: serviceToSave.title,
+      description: serviceToSave.description,
+      iconUrl: finalIconUrl || '', // Assicura che sia una stringa, anche vuota
+      link: serviceToSave.link,
+    };
+
     try {
-      console.log("Saving service:", serviceToSave);
-      await updateServiceCard(serviceToSave.id, serviceToSave); // Use the updateServiceCard function
-      await new Promise(resolve => setTimeout(resolve, 500)); // Simulate save delay
+      await updateServiceCard(serviceToSave.id, serviceCardToUpdate);
       toast({ title: "Successo", description: `Servizio "${serviceToSave.title}" salvato con successo.` });
+      // Resetta il campo file dopo il salvataggio
+      setServices(prevServices => prevServices.map(s => 
+        s.id === serviceToSave.id ? { ...s, iconFile: null } : s
+      ));
     } catch (error) {
       console.error("Error saving service:", error);
       toast({ title: "Errore", description: `Impossibile salvare il servizio "${serviceToSave.title}".`, variant: "destructive" });
-    } finally { // This should be setIsSaving, not setIsLoading
-      setIsLoading(false);
+    } finally {
+      setSavingStates(prev => ({ ...prev, [serviceToSave.id]: false }));
     }
   };
 
@@ -84,7 +130,7 @@ export default function AdminServiziPage() {
           <Loader2 className="h-12 w-12 text-accent animate-spin" />
         </div>
       ) : (
-        <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3">
           {services.map(service => (
             <Card key={service.id} className="bg-card shadow-lg">
               <CardHeader>
@@ -98,6 +144,7 @@ export default function AdminServiziPage() {
                     value={service.description}
                     onChange={(e) => handleInputChange(service.id, 'description', e.target.value)}
                     className="bg-input border-border focus:border-accent focus:ring-accent min-h-[80px]"
+                    disabled={savingStates[service.id]}
                   />
                 </div>
                 <div>
@@ -108,7 +155,26 @@ export default function AdminServiziPage() {
                     onChange={(e) => handleInputChange(service.id, 'iconUrl', e.target.value)}
                     className="bg-input border-border focus:border-accent focus:ring-accent"
                     placeholder="https://example.com/icon.png"
+                    disabled={savingStates[service.id]}
                   />
+                </div>
+                <div>
+                  <Label htmlFor={`iconFile-${service.id}`} className="text-foreground/80 block mb-1.5">Carica Icona (Alternativa all'URL)</Label>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      id={`iconFile-${service.id}`}
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => handleFileChange(service.id, e)}
+                      className="bg-input border-border focus:border-accent focus:ring-accent flex-grow"
+                      disabled={savingStates[service.id]}
+                    />
+                    <ImageUp className="h-5 w-5 text-muted-foreground"/>
+                  </div>
+                  {service.iconFile && service.iconFile.length > 0 && (
+                    <p className="text-xs text-muted-foreground mt-1">Selezionato: {service.iconFile[0].name}</p>
+                  )}
+                  <p className="text-xs text-muted-foreground mt-1">Nota: L'upload effettivo non è implementato. Se fornisci un URL, avrà la precedenza.</p>
                 </div>
                 <div>
                   <Label htmlFor={`link-${service.id}`} className="text-foreground/80 block mb-1.5">Link Pagina</Label>
@@ -118,14 +184,15 @@ export default function AdminServiziPage() {
                     onChange={(e) => handleInputChange(service.id, 'link', e.target.value)}
                     className="bg-input border-border focus:border-accent focus:ring-accent"
                     placeholder="/shop"
+                    disabled={savingStates[service.id]}
                   />
                 </div>
                 <div className="pt-4 border-t border-border/40">
- <Button onClick={() => handleSave(service)} className="bg-primary hover:bg-primary/90 text-primary-foreground" disabled={isSaving}>
-                    {isSaving ? (
+                 <Button onClick={() => handleSave(service)} className="bg-primary hover:bg-primary/90 text-primary-foreground w-full" disabled={savingStates[service.id] || isLoading}>
+                    {savingStates[service.id] ? (
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     ) : null}
- Salva Modifiche
+                    {savingStates[service.id] ? 'Salvataggio...' : 'Salva Modifiche'}
                   </Button>
                 </div>
               </CardContent>
@@ -136,3 +203,4 @@ export default function AdminServiziPage() {
     </div>
   );
 }
+
