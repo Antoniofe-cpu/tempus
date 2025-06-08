@@ -1,3 +1,4 @@
+
 'use client';
 
 import Image from 'next/image';
@@ -13,7 +14,7 @@ export default function WatchDetailImage({ src, alt, dataAiHint }: WatchDetailIm
   const [imgSrc, setImgSrc] = useState(src);
 
   const handleError = () => {
-    setImgSrc('https://placehold.co/600x400.png');
+    setImgSrc('https://placehold.co/600x400.png'); // Fallback image
   };
 
   return (
@@ -24,6 +25,7 @@ export default function WatchDetailImage({ src, alt, dataAiHint }: WatchDetailIm
       className="object-contain p-4 md:p-8"
       data-ai-hint={dataAiHint || ''}
       onError={handleError}
+      // priority prop is explicitly not used here
     />
   );
 }

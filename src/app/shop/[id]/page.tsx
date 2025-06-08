@@ -1,6 +1,5 @@
 
 import type { Metadata, ResolvingMetadata } from 'next';
-import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import Header from '@/components/layout/Header';
@@ -9,8 +8,9 @@ import { getWatchById } from '@/services/watchService';
 import type { Watch } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, TagIcon, PackageCheckIcon, LayersIcon, InfoIcon, ShoppingCart, CircleHelpIcon } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { ArrowLeft, PackageCheckIcon, LayersIcon, InfoIcon, ShoppingCart, CircleHelpIcon } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import WatchDetailImage from '@/components/WatchDetailImage'; // Ensure this client component is used
 
 type Props = {
   params: { id: string };
@@ -31,13 +31,13 @@ export async function generateMetadata(
 
   return {
     title: `${watch.name} - ${watch.brand} | Tempus Concierge`,
-    description: `Dettagli per ${watch.name}. ${watch.description.substring(0, 160)}...`,
+    description: `Dettagli per ${watch.name}. ${watch.description ? watch.description.substring(0, 160) : ''}...`,
     openGraph: {
       title: `${watch.name} - ${watch.brand}`,
-      description: watch.description.substring(0, 200),
+      description: watch.description ? watch.description.substring(0, 200) : '',
       images: [
         {
-          url: watch.imageUrl,
+          url: watch.imageUrl || 'https://placehold.co/600x400.png',
           width: 600,
           height: 400,
           alt: watch.name,
@@ -54,7 +54,7 @@ export default async function WatchDetailPage({ params }: Props) {
     notFound();
   }
 
-  const fallbackAiHint = watch.name.split(" ").slice(0, 2).join(" ").toLowerCase();
+  const fallbackAiHint = watch.name ? watch.name.split(" ").slice(0, 2).join(" ").toLowerCase() : "watch detail";
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
@@ -71,19 +71,12 @@ export default async function WatchDetailPage({ params }: Props) {
 
         <Card className="overflow-hidden shadow-xl bg-card border-border/60">
           <div className="grid md:grid-cols-2 gap-0">
-            {/* Colonna Immagine */}
+            {/* Colonna Immagine: Using WatchDetailImage Client Component */}
             <div className="relative min-h-[300px] md:min-h-[400px] lg:min-h-[500px] bg-muted/30">
-              <Image
-                src={watch.imageUrl}
-                alt={watch.name}
-                fill
-                className="object-contain p-4 md:p-8"
+              <WatchDetailImage
+                src={watch.imageUrl || 'https://placehold.co/600x400.png'}
+                alt={watch.name || 'Dettaglio orologio'}
                 data-ai-hint={watch.dataAiHint || fallbackAiHint}
-                priority
-                 onError={(e) => {
-                    e.currentTarget.src = 'https://placehold.co/600x400.png';
-                    e.currentTarget.srcset = '';
-                }}
               />
             </div>
 
@@ -99,7 +92,7 @@ export default async function WatchDetailPage({ params }: Props) {
               </h1>
               
               <p className="text-3xl lg:text-4xl font-bold text-accent mb-6">
-                {watch.price.toLocaleString('it-IT', { style: 'currency', currency: 'EUR' })}
+                {(watch.price || 0).toLocaleString('it-IT', { style: 'currency', currency: 'EUR' })}
               </p>
 
               <div className="space-y-4 mb-6 text-foreground/80">
@@ -118,7 +111,7 @@ export default async function WatchDetailPage({ params }: Props) {
                 <div className="flex items-center">
                   <ShoppingCart className="h-5 w-5 mr-2 text-accent" />
                   <span>
-                    <strong>Disponibilità:</strong> {watch.stock > 0 ? `${watch.stock} pz.` : <span className="text-destructive font-semibold">Esaurito</span>}
+                    <strong>Disponibilità:</strong> {(watch.stock || 0) > 0 ? `${watch.stock} pz.` : <span className="text-destructive font-semibold">Esaurito</span>}
                   </span>
                 </div>
               </div>
@@ -151,4 +144,3 @@ export default async function WatchDetailPage({ params }: Props) {
     </div>
   );
 }
-
