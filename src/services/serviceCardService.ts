@@ -1,3 +1,4 @@
+
 // src/services/serviceCardService.ts
 import { db } from '@/lib/firebase';
 import {
@@ -25,26 +26,26 @@ const defaultServiceCards: Omit<ServiceCard, 'id'>[] = [
   {
     title: 'Compra',
     description: 'Trova il tuo prossimo orologio da sogno.',
-    iconUrl: '/icons/buy-icon.svg', // Example placeholder icon URL
+    // iconUrl: '/icons/buy-icon.svg', // Removed to prevent 404
     link: '/shop',
   },
   {
     title: 'Vendi',
     description: 'Valuta e vendi il tuo orologio con facilità.',
-    iconUrl: '/icons/sell-icon.svg', // Example placeholder icon URL
-    link: '/vendi', // Example link
+    // iconUrl: '/icons/sell-icon.svg', // Removed to prevent 404
+    link: '/vendi', 
   },
   {
     title: 'Cerca',
     description: 'Richiedi una ricerca personalizzata per un pezzo raro.',
-    iconUrl: '/icons/search-icon.svg', // Example placeholder icon URL
+    // iconUrl: '/icons/search-icon.svg', // Removed to prevent 404
     link: '/richiesta-personalizzata',
   },
   {
     title: 'Ripara',
     description: 'Affidati ai nostri esperti per la cura del tuo orologio.',
-    iconUrl: '/icons/repair-icon.svg', // Example placeholder icon URL
-    link: '/ripara', // Example link
+    // iconUrl: '/icons/repair-icon.svg', // Removed to prevent 404
+    link: '/ripara', 
   },
   // Add more default cards as needed
 ];
