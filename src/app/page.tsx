@@ -25,7 +25,7 @@ export default function HomePage() {
               style={{ objectFit: 'cover' }}
               quality={80}
               priority
-              data-ai-hint="collezione orologi lusso"
+              data-ai-hint="orologi collezione lusso" // Leggera modifica qui
             />
           </div>
           <div className="container relative z-10 mx-auto px-4">
