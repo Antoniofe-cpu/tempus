@@ -7,8 +7,8 @@ import {
   getDocs, 
   addDoc, 
   doc, 
-  updateDoc, 
-  deleteDoc, 
+  updateDoc,
+  deleteDoc,
   getDoc,
   // query, // Non usato attualmente, rimosso per pulizia
   // orderBy, // Non usato attualmente, rimosso per pulizia
@@ -20,16 +20,23 @@ const COLLECTION_NAME = 'watches';
 
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-export async function getWatches(): Promise<Watch[]> {
-  console.log('Servizio (Firestore): getWatches chiamato');
-  await delay(50); 
+import { query, where } from 'firebase/firestore';
+
+export async function getWatches(isNewArrival?: boolean): Promise<Watch[]> {
+  console.log(`Servizio (Firestore): getWatches chiamato${isNewArrival === true ? ' filtrando per Nuovi Arrivi' : ''}`);
+  await delay(50);
   try {
     const watchesCollection = collection(db, COLLECTION_NAME);
-    const querySnapshot = await getDocs(watchesCollection);
+    let q = watchesCollection as any; // Start with the base collection reference
+
+    if (isNewArrival === true) {
+      q = query(watchesCollection, where('isNewArrival', '==', true));
+    }
+    const querySnapshot = await getDocs(q);
     const watches = querySnapshot.docs.map(docSnapshot => {
       const data = docSnapshot.data();
-      return { 
-        id: docSnapshot.id, 
+      return {
+        id: docSnapshot.id,
         ...data,
       } as Watch;
     });
@@ -49,9 +56,9 @@ export async function getWatchById(id: string): Promise<Watch | null> {
         const docSnap = await getDoc(watchDocRef);
         if (docSnap.exists()) {
             const data = docSnap.data();
-            return { 
-                id: docSnap.id, 
-                ...data 
+            return {
+                id: docSnap.id,
+                ...data
             } as Watch;
         } else {
             console.log(`Servizio (Firestore): Nessun orologio trovato con ID: ${id}`);
@@ -84,7 +91,7 @@ export async function addWatchService(watchData: Omit<Watch, 'id'>): Promise<Wat
     });
     console.log('Servizio (Firestore): addWatchService - dati pronti per Firestore:', JSON.stringify(dataToSave, null, 2));
 
-    const docRef = await addDoc(collection(db, COLLECTION_NAME), dataToSave);
+    const docRef = await addDoc(watchesCollection, dataToSave);
     const newWatch: Watch = { id: docRef.id, ...(watchData as Watch) }; // Ricostruisci l'oggetto con l'id
     console.log('Servizio (Firestore): addWatchService - orologio aggiunto con ID:', docRef.id);
     return newWatch;
@@ -111,10 +118,10 @@ export async function updateWatchService(id: string, watchUpdate: Partial<Omit<W
     const updatedDocSnap = await getDoc(watchRef);
     if (updatedDocSnap.exists()) {
       const data = updatedDocSnap.data();
-      console.log('Servizio (Firestore): updateWatchService - orologio aggiornato');
-      return { 
-        id: updatedDocSnap.id, 
-        ...data 
+      console.log('Servizio (Firestore): updateWatchService - orologio aggiornato', updatedDocSnap.id);
+      return {
+        id: updatedDocSnap.id,
+        ...data
       } as Watch;
     }
     return null; 
@@ -143,7 +150,7 @@ export async function populateFirestoreWithMockDataIfNeeded(): Promise<void> {
     if (snapshot.empty) {
       console.log('Collezione "watches" vuota. Popolamento con dati mock...');
       for (const watch of initialMockWatches) {
-        const { id, ...watchData } = watch; 
+        const { id, ...watchData } = watch;
         // Assicurati che i dati mock non abbiano undefined
         const dataToSave: Record<string, any> = { ...watchData };
         Object.keys(dataToSave).forEach(key => {
@@ -151,7 +158,7 @@ export async function populateFirestoreWithMockDataIfNeeded(): Promise<void> {
                 delete dataToSave[key];
             }
         });
-        await addDoc(watchesCollection, dataToSave); 
+        await addDoc(watchesCollection, dataToSave);
       }
       console.log('Popolamento completato.');
     } else {

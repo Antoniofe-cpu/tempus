@@ -49,6 +49,7 @@ const WatchFormSchema = z.object({
   dataAiHint: z.string().max(30, { message: "L'hint AI non può superare 30 caratteri." }).optional().default(''),
   rarity: z.string().optional().default(''),
   condition: z.string().optional().default(''),
+  isNewArrival: z.boolean().default(false),
 });
 
 type WatchFormData = z.infer<typeof WatchFormSchema>;
@@ -74,6 +75,7 @@ export default function AdminOrologiPage() {
       dataAiHint: '',
       rarity: '',
       condition: '',
+      isNewArrival: false,
     }
   });
 
@@ -106,6 +108,7 @@ export default function AdminOrologiPage() {
           dataAiHint: editingWatch.dataAiHint || '',
           rarity: editingWatch.rarity || '',
           condition: editingWatch.condition || '',
+          isNewArrival: editingWatch.isNewArrival || false,
         });
       } else {
         reset({ 
@@ -118,6 +121,7 @@ export default function AdminOrologiPage() {
             dataAiHint: '',
             rarity: '',
             condition: '',
+            isNewArrival: false,
         });
       }
     }
@@ -137,6 +141,7 @@ export default function AdminOrologiPage() {
         dataAiHint: data.dataAiHint || data.name.split(" ").slice(0,2).join(" ").toLowerCase() || 'orologio generico',
         rarity: data.rarity || '',
         condition: data.condition || '',
+        isNewArrival: data.isNewArrival,
       };
 
       if (editingWatch) {
@@ -175,6 +180,7 @@ export default function AdminOrologiPage() {
       dataAiHint: '',
       rarity: '',
       condition: '',
+      isNewArrival: false,
     }); 
     setIsDialogOpen(true);
   };
@@ -293,6 +299,13 @@ export default function AdminOrologiPage() {
                     {errors.description && <p className="text-sm text-destructive mt-1">{errors.description.message}</p>}
                   </div>
                   
+                  <div className="flex items-center gap-2">
+                    <Input id="isNewArrival" type="checkbox" {...register("isNewArrival")} className="h-4 w-4 text-primary focus:ring-primary border-border rounded" />
+                    <Label htmlFor="isNewArrival" className="text-foreground/80">Segna come "Nuovo Arrivo"</Label>
+                    {errors.isNewArrival && <p className="text-sm text-destructive mt-1">{errors.isNewArrival.message}</p>}
+                  </div>
+
+
                   <DialogFooter className="mt-2 pt-4 border-t border-border/40">
                     <DialogClose asChild>
                        <Button type="button" variant="outline" onClick={resetFormStates}>Annulla</Button>
@@ -334,6 +347,7 @@ export default function AdminOrologiPage() {
                 <TableHead>Marca</TableHead>
                 <TableHead>Prezzo</TableHead>
                 <TableHead>Disponibilità</TableHead>
+                <TableHead>Nuovo Arrivo</TableHead>
                 <TableHead className="text-right">Azioni</TableHead>
               </TableRow>
             </TableHeader>
@@ -358,6 +372,7 @@ export default function AdminOrologiPage() {
                   <TableCell>{watch.brand}</TableCell>
                   <TableCell>€{(watch.price || 0).toLocaleString('it-IT')}</TableCell>
                   <TableCell>{(watch.stock || 0) > 0 ? `${watch.stock} pz.` : <span className="text-destructive">Esaurito</span>}</TableCell>
+                  <TableCell>{watch.isNewArrival ? 'Sì' : 'No'}</TableCell>
                   <TableCell className="text-right space-x-2">
                     <Button variant="ghost" size="icon" className="text-primary hover:text-primary/80" onClick={() => handleEditClick(watch)}>
                       <Edit className="h-4 w-4" />
@@ -388,7 +403,7 @@ export default function AdminOrologiPage() {
               )) : (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
-                    {searchTerm ? `Nessun orologio trovato per "${searchTerm}".` : 
+                    {searchTerm ? `Nessun orologio trovato per "${searchTerm}".` :
                     (isLoading ? "Caricamento orologi..." : "Nessun orologio nel catalogo. Inizia aggiungendone uno o popola Firestore!")}
                   </TableCell>
                 </TableRow>
@@ -405,5 +420,7 @@ export default function AdminOrologiPage() {
     </div>
   );
 }
+
+
 
     
