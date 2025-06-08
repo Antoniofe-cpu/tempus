@@ -4,6 +4,7 @@
 import { z } from 'zod';
 import type { PersonalizedRequest } from './types';
 import { suggestWatches as genAISuggestWatches, type SuggestWatchesInput, type SuggestWatchesOutput } from '@/ai/flows/suggest-watches';
+import { fetchWatchNews as genAIFetchWatchNews, type FetchWatchNewsOutput } from '@/ai/flows/fetch-watch-news-flow';
 import { addRequestService } from '@/services/requestService'; // Importa il servizio corretto
 
 // Schema for personalized request form validation
@@ -101,5 +102,21 @@ export async function getAiWatchSuggestions(criteria: string): Promise<SuggestWa
     console.error("Error getting AI suggestions:", error);
     // Provide a user-friendly error message in Italian
     return { suggestions: ["Si è verificato un errore nel recuperare i suggerimenti. Riprova più tardi o contatta l'assistenza."] };
+  }
+}
+
+export async function getWatchNews(): Promise<FetchWatchNewsOutput> {
+  try {
+    const result = await genAIFetchWatchNews();
+    // Assicurati che newsItems sia sempre un array, anche se l'output del flow è null o undefined
+    return result && result.newsItems ? result : { newsItems: [] };
+  } catch (error) {
+    console.error("Error getting AI watch news:", error);
+    return { 
+      newsItems: [{ 
+        title: "Errore di Caricamento Notizie", 
+        summary: "Impossibile caricare le notizie dal mondo degli orologi in questo momento. Riprova più tardi." 
+      }] 
+    };
   }
 }
