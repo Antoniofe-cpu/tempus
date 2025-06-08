@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useActionState } from 'react'; // Corrected from useFormState
+import { useActionState } from 'react'; 
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -17,7 +18,7 @@ import type { WatchType } from '@/lib/types';
 import React, { useEffect, useState, useCallback } from 'react';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { CheckCircle, AlertCircleIcon, Sparkles, SendIcon, Loader2 } from "lucide-react";
-import { useFormStatus } from 'react-dom'; // Corrected import for useFormStatus
+import { useFormStatus } from 'react-dom'; 
 
 const PersonalizedRequestSchema = z.object({
   name: z.string().min(2, { message: "Il nome deve contenere almeno 2 caratteri." }),
@@ -25,11 +26,17 @@ const PersonalizedRequestSchema = z.object({
   watchType: z.string().min(1, { message: "Seleziona un tipo di orologio." }),
   desiredBrand: z.string().optional(),
   desiredModel: z.string().optional(),
-  budgetMin: z.coerce.number().min(0).optional(),
-  budgetMax: z.coerce.number().min(0).optional(),
+  budgetMin: z.coerce.number().min(0).optional().nullable(),
+  budgetMax: z.coerce.number().min(0).optional().nullable(),
   aiCriteria: z.string().max(500, {message: "La descrizione per AI non può superare i 500 caratteri."}).optional(),
   additionalNotes: z.string().max(1000, {message: "Le note aggiuntive non possono superare i 1000 caratteri."}).optional(),
-}).refine(data => !data.budgetMin || !data.budgetMax || data.budgetMax >= data.budgetMin, {
+}).refine(data => {
+  if (data.budgetMin !== null && data.budgetMin !== undefined && 
+      data.budgetMax !== null && data.budgetMax !== undefined) {
+    return data.budgetMax >= data.budgetMin;
+  }
+  return true;
+}, {
   message: "Il budget massimo deve essere maggiore o uguale al budget minimo.",
   path: ["budgetMax"],
 });
@@ -65,7 +72,7 @@ function SubmitButton() {
 
 
 export default function RequestForm() {
-  const initialState: FormState = { message: '', success: false };
+  const initialState: FormState = { message: '', success: false, issues: [] }; // Aggiunto issues a initialState
   const [state, formAction] = useActionState(submitPersonalizedRequest, initialState); 
   
   const { register, control, handleSubmit, formState: { errors }, watch, setValue, reset } = useForm<PersonalizedRequestFormData>({
@@ -73,18 +80,25 @@ export default function RequestForm() {
     defaultValues: {
       budgetMin: budgetPresets[0].min,
       budgetMax: budgetPresets[0].max,
+      name: '', // Aggiungi valori di default per tutti i campi per evitare "uncontrolled to controlled"
+      email: '',
+      watchType: '',
+      desiredBrand: '',
+      desiredModel: '',
+      aiCriteria: '',
+      additionalNotes: '',
     }
   });
 
   const [budgetRange, setBudgetRange] = useState<[number, number]>([budgetPresets[0].min, budgetPresets[0].max]);
-  const aiCriteriaValue = watch("aiCriteria");
+  // const aiCriteriaValue = watch("aiCriteria"); // Non usato direttamente, rimosso per pulizia
 
   useEffect(() => {
     if (state.success) {
       reset(); 
       setBudgetRange([budgetPresets[0].min, budgetPresets[0].max]);
-    }
-    if (state.fields && !state.success) {
+      // Potresti voler mostrare un toast di successo qui se preferisci
+    } else if (state.fields) { // Se ci sono errori di validazione con campi
        Object.entries(state.fields).forEach(([key, value]) => {
         setValue(key as keyof PersonalizedRequestFormData, value);
       });
@@ -129,13 +143,28 @@ export default function RequestForm() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form action={formAction} className="space-y-8">
+        {/* Gestione del form spostata per usare RHF handleSubmit prima di FormData */}
+        <form onSubmit={handleSubmit((data) => {
+          // Converti i dati del form RHF in FormData per l'action
+          const formData = new FormData();
+          Object.entries(data).forEach(([key, value]) => {
+            if (value !== undefined && value !== null) {
+              formData.append(key, String(value));
+            } else if (value === null && (key === 'budgetMin' || key === 'budgetMax')) {
+              // Non appendere se null, Zod .nullable().optional() lo gestirà come undefined se non presente
+            } else if (value !== undefined) {
+                 formData.append(key, String(value));
+            }
+          });
+          formAction(formData);
+        })} className="space-y-8">
+
           {state.message && !state.success && (
             <Alert variant="destructive">
               <AlertCircleIcon className="h-4 w-4" />
               <AlertTitle>Errore</AlertTitle>
               <AlertDescription>{state.message}</AlertDescription>
-              {state.issues && (
+              {state.issues && state.issues.length > 0 && (
                 <ul className="list-disc list-inside mt-2 text-sm">
                   {state.issues.map((issue, i) => <li key={i}>{issue}</li>)}
                 </ul>
@@ -168,8 +197,9 @@ export default function RequestForm() {
             <Controller
               name="watchType"
               control={control}
+              defaultValue=""
               render={({ field }) => (
-                <Select onValueChange={field.onChange} value={field.value || ""} >
+                <Select onValueChange={field.onChange} value={field.value} >
                   <SelectTrigger id="watchType" className="mt-1 bg-input border-border focus:border-accent focus:ring-accent">
                     <SelectValue placeholder="Seleziona un tipo" />
                   </SelectTrigger>
@@ -199,17 +229,22 @@ export default function RequestForm() {
             <Label className="text-foreground/80">Fascia di Prezzo (Opzionale)</Label>
             <div className="mt-2 space-y-3">
               <Controller
-                name="budgetMin" // This makes sure RHF tracks the field
+                name="budgetMin" 
                 control={control}
-                render={({ field }) => (
-                  <Select onValueChange={handlePresetChange} defaultValue={`${budgetPresets[0].min}-${budgetPresets[0].max}`}>
+                // Rimosso il render custom per Select qui, i valori sono gestiti da budgetRange e input nascosti
+                render={({ field }) => ( // field.value qui sarà budgetRange[0]
+                  <Select 
+                    onValueChange={handlePresetChange} 
+                    value={budgetPresets.find(p => p.min === field.value && p.max === watch("budgetMax")) ? `${field.value}-${watch("budgetMax")}` : ""}
+                  >
                     <SelectTrigger className="w-full md:w-1/2 bg-input border-border focus:border-accent focus:ring-accent">
-                      <SelectValue placeholder="Seleziona fascia di prezzo" />
+                      <SelectValue placeholder="Seleziona fascia di prezzo predefinita" />
                     </SelectTrigger>
                     <SelectContent className="bg-popover border-border">
                       {budgetPresets.map(preset => (
                         <SelectItem key={preset.label} value={`${preset.min}-${preset.max}`} className="hover:bg-accent/20 focus:bg-accent/20">{preset.label}</SelectItem>
                       ))}
+                       <SelectItem value="custom">Personalizzata (usa slider)</SelectItem>
                     </SelectContent>
                   </Select>
                 )}
@@ -226,10 +261,10 @@ export default function RequestForm() {
                 <span>€{budgetRange[0].toLocaleString('it-IT')}</span>
                 <span>€{budgetRange[1].toLocaleString('it-IT')}</span>
               </div>
-              {/* Hidden inputs are not strictly necessary if using Controller for Slider values, but keep for RHF direct registration */}
               <input type="hidden" {...register("budgetMin")} value={budgetRange[0]} />
               <input type="hidden" {...register("budgetMax")} value={budgetRange[1]} />
               {errors.budgetMax && <p className="text-sm text-destructive mt-1">{errors.budgetMax.message}</p>}
+              {errors.budgetMin && !errors.budgetMax && <p className="text-sm text-destructive mt-1">{errors.budgetMin.message}</p>}
             </div>
           </div>
           
@@ -270,3 +305,4 @@ export default function RequestForm() {
     </Card>
   );
 }
+
