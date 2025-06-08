@@ -10,11 +10,12 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowRight, GemIcon, SearchIcon, ShieldCheckIcon, WatchIcon as LucideWatchIcon } from 'lucide-react';
 import type { Watch } from '@/lib/types';
-import type { ServiceCard as ServiceCardType } from '@/lib/types'; // Assicurati che il tipo sia importato
+import type { ServiceCard as ServiceCardType } from '@/lib/types';
 import { getServiceCards } from '@/services/serviceCardService';
 import { getWatches } from '@/services/watchService';
 import { useToast } from '@/hooks/use-toast';
-import ServiceCard from '@/components/ServiceCard'; // Import corretto
+import ServiceCard from '@/components/ServiceCard';
+import WatchNewsSection from '@/components/WatchNewsSection'; // Aggiunto import
 
 export default function HomePage() {
   const [latestWatches, setLatestWatches] = useState<Watch[]>([]);
@@ -31,7 +32,9 @@ export default function HomePage() {
       if (newArrivals.length > 0) {
           setLatestWatches(newArrivals);
       } else {
-          setLatestWatches(allWatches.slice(0, 3));
+          // Se non ci sono "isNewArrival", prendi gli ultimi 3 per data di inserimento (se disponibile) o semplicemente i primi
+          // Questa logica potrebbe essere migliorata se ci fosse un campo "createdAt"
+          setLatestWatches(allWatches.sort((a, b) => (b as any).createdAt?.toDate() - (a as any).createdAt?.toDate()).slice(0, 3));
       }
     } catch (error) {
       console.error("Errore nel caricamento degli ultimi orologi:", error);
@@ -165,7 +168,7 @@ export default function HomePage() {
                       <LucideWatchIcon className="h-12 w-12 text-accent animate-spin" />
                     </div>
                 ) : serviceCards.length > 0 ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8"> {/* Modificato qui: md:grid-cols-2 */}
                     {serviceCards.map((card) => (
                       <ServiceCard
                         key={card.id}
@@ -182,6 +185,13 @@ export default function HomePage() {
                   </div>
                 )}
             </div>
+        </section>
+
+        {/* Sezione Ultime Notizie aggiunta qui */}
+        <section className="py-16 md:py-24 bg-muted">
+          <div className="container mx-auto px-4">
+            <WatchNewsSection />
+          </div>
         </section>
 
       </main>
