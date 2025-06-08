@@ -202,6 +202,7 @@ export type WatchCondition = typeof watchConditionOptions[number];
 export type SellRequestStatus =
   | 'Nuova Proposta'
   | 'In Valutazione'
+  | 'In Trattativa'
   | 'Offerta Inviata'
   | 'Accettata dal Cliente'
   | 'Rifiutata dal Cliente'
@@ -209,8 +210,7 @@ export type SellRequestStatus =
   | 'Orologio Ricevuto e Verificato'
   | 'Pagamento Effettuato'
   | 'Conclusa'
-  | 'Cancellata'
-  | 'In Trattativa';
+  | 'Cancellata';
 
 export const AllSellRequestStatuses: SellRequestStatus[] = [
   'Nuova Proposta',
@@ -270,7 +270,7 @@ export interface ServiceCard {
   id: string;
   title: string;
   description: string;
-  iconUrl?: string; // iconUrl è opzionale
+  iconUrl?: string;
   link: string;
 }
 
@@ -279,6 +279,7 @@ export interface AppSettings {
   appName: string;
   contactEmail: string;
   defaultCurrency: string;
+  mainServicesIconUrl?: string; // Nuovo campo per l'icona principale dei servizi
   updatedAt?: Date;
 }
 
@@ -286,5 +287,6 @@ export interface AppSettingsFirestoreData {
   appName: string;
   contactEmail: string;
   defaultCurrency: string;
+  mainServicesIconUrl?: string; // Nuovo campo per l'icona principale dei servizi
   updatedAt?: import('firebase/firestore').Timestamp;
 }

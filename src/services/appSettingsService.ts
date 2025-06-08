@@ -3,7 +3,7 @@
 'use server';
 
 import type { AppSettings, AppSettingsFirestoreData } from '@/lib/types';
-import { db } from '@/lib/firebase';
+import { db, storage } from '@/lib/firebase'; // Import storage
 import {
   doc,
   getDoc,
@@ -11,21 +11,23 @@ import {
   Timestamp,
   serverTimestamp,
 } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'; // Import per storage
 
 const SETTINGS_COLLECTION = 'appConfiguration';
-const SETTINGS_DOC_ID = 'mainSettings'; // ID fisso per il documento delle impostazioni
+const SETTINGS_DOC_ID = 'mainSettings';
 
 const defaultSettings: AppSettings = {
   appName: 'Tempus Concierge',
   contactEmail: 'info@tempusconcierge.com',
   defaultCurrency: 'EUR',
+  mainServicesIconUrl: '', // Default vuoto
 };
 
-// Helper per convertire i dati da Firestore (con Timestamp) a AppSettings (con Date)
 const fromFirestore = (data: AppSettingsFirestoreData, id: string): AppSettings => {
   return {
     id,
     ...data,
+    mainServicesIconUrl: data.mainServicesIconUrl || '',
     updatedAt: data.updatedAt?.toDate(),
   };
 };
@@ -38,15 +40,12 @@ export async function getAppSettings(): Promise<AppSettings> {
     if (docSnap.exists()) {
       return fromFirestore(docSnap.data() as AppSettingsFirestoreData, docSnap.id);
     } else {
-      // Se il documento non esiste, inizializzalo con i valori di default
       console.log(`Documento impostazioni ${SETTINGS_DOC_ID} non trovato. Inizializzazione con valori di default.`);
       await setDoc(docRef, { ...defaultSettings, updatedAt: serverTimestamp() });
-      // Ritorna i default settings (senza id e updatedAt qui, verranno dal prossimo get se necessario)
       return { ...defaultSettings, id: SETTINGS_DOC_ID }; 
     }
   } catch (error) {
     console.error("Errore in getAppSettings (Firestore): ", error);
-    // In caso di errore, ritorna i default settings per evitare crash dell'app
     return { ...defaultSettings, id: SETTINGS_DOC_ID };
   }
 }
@@ -58,9 +57,29 @@ export async function updateAppSettings(settingsData: Partial<Omit<AppSettings, 
       ...settingsData,
       updatedAt: serverTimestamp() as Timestamp,
     };
-    await setDoc(docRef, dataToUpdate, { merge: true }); // Usa merge:true per aggiornare o creare se non esiste
+    // Assicura che mainServicesIconUrl sia una stringa, anche vuota, se non definito
+    if (settingsData.mainServicesIconUrl === undefined) {
+      dataToUpdate.mainServicesIconUrl = '';
+    }
+    
+    await setDoc(docRef, dataToUpdate, { merge: true });
   } catch (error) {
     console.error("Errore in updateAppSettings (Firestore): ", error);
     throw new Error(`Impossibile aggiornare le impostazioni: ${(error as Error).message}`);
+  }
+}
+
+// Funzione per caricare l'icona delle impostazioni su Firebase Storage
+export async function uploadAppSettingsIcon(file: File, iconName: string = 'mainServicesIcon'): Promise<string> {
+  try {
+    const fileName = `app-settings-icons/${iconName}-${Date.now()}-${file.name}`;
+    const storageRef = ref(storage, fileName);
+
+    const snapshot = await uploadBytes(storageRef, file);
+    const downloadURL = await getDownloadURL(snapshot.ref);
+    return downloadURL;
+  } catch (error) {
+    console.error("Error uploading app settings icon to Firebase Storage:", error);
+    throw new Error(`Impossibile caricare l'icona: ${(error as Error).message}`);
   }
 }
