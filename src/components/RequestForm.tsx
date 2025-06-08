@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useActionState } from 'react'; 
+import { useActionState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -18,7 +18,7 @@ import type { WatchType } from '@/lib/types';
 import React, { useEffect, useState, useCallback } from 'react';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { CheckCircle, AlertCircleIcon, Sparkles, SendIcon, Loader2 } from "lucide-react";
-import { useFormStatus } from 'react-dom'; 
+import { useFormStatus } from 'react-dom';
 
 const PersonalizedRequestSchema = z.object({
   name: z.string().min(2, { message: "Il nome deve contenere almeno 2 caratteri." }),
@@ -31,7 +31,7 @@ const PersonalizedRequestSchema = z.object({
   aiCriteria: z.string().max(500, {message: "La descrizione per AI non può superare i 500 caratteri."}).optional(),
   additionalNotes: z.string().max(1000, {message: "Le note aggiuntive non possono superare i 1000 caratteri."}).optional(),
 }).refine(data => {
-  if (data.budgetMin !== null && data.budgetMin !== undefined && 
+  if (data.budgetMin !== null && data.budgetMin !== undefined &&
       data.budgetMax !== null && data.budgetMax !== undefined) {
     return data.budgetMax >= data.budgetMin;
   }
@@ -72,15 +72,15 @@ function SubmitButton() {
 
 
 export default function RequestForm() {
-  const initialState: FormState = { message: '', success: false, issues: [] }; // Aggiunto issues a initialState
-  const [state, formAction] = useActionState(submitPersonalizedRequest, initialState); 
-  
+  const initialState: FormState = { message: '', success: false, issues: [] };
+  const [state, formAction] = useActionState(submitPersonalizedRequest, initialState);
+
   const { register, control, handleSubmit, formState: { errors }, watch, setValue, reset } = useForm<PersonalizedRequestFormData>({
     resolver: zodResolver(PersonalizedRequestSchema),
     defaultValues: {
       budgetMin: budgetPresets[0].min,
       budgetMax: budgetPresets[0].max,
-      name: '', // Aggiungi valori di default per tutti i campi per evitare "uncontrolled to controlled"
+      name: '',
       email: '',
       watchType: '',
       desiredBrand: '',
@@ -91,14 +91,12 @@ export default function RequestForm() {
   });
 
   const [budgetRange, setBudgetRange] = useState<[number, number]>([budgetPresets[0].min, budgetPresets[0].max]);
-  // const aiCriteriaValue = watch("aiCriteria"); // Non usato direttamente, rimosso per pulizia
 
   useEffect(() => {
     if (state.success) {
-      reset(); 
+      reset();
       setBudgetRange([budgetPresets[0].min, budgetPresets[0].max]);
-      // Potresti voler mostrare un toast di successo qui se preferisci
-    } else if (state.fields) { // Se ci sono errori di validazione con campi
+    } else if (state.fields) {
        Object.entries(state.fields).forEach(([key, value]) => {
         setValue(key as keyof PersonalizedRequestFormData, value);
       });
@@ -123,7 +121,7 @@ export default function RequestForm() {
     const newNotes = `${currentNotes}\n- Suggerimento AI: ${suggestion}`.trim();
     setValue("additionalNotes", newNotes, { shouldValidate: true });
   };
-  
+
   const handleTriggerAiSuggestions = useCallback(() => {
     const criteria = watch("aiCriteria");
     if (typeof (window as any).triggerAiSuggestionsGlobal === 'function') {
@@ -143,21 +141,20 @@ export default function RequestForm() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {/* Gestione del form spostata per usare RHF handleSubmit prima di FormData */}
-        <form onSubmit={handleSubmit((data) => {
-          // Converti i dati del form RHF in FormData per l'action
-          const formData = new FormData();
-          Object.entries(data).forEach(([key, value]) => {
-            if (value !== undefined && value !== null) {
-              formData.append(key, String(value));
-            } else if (value === null && (key === 'budgetMin' || key === 'budgetMax')) {
-              // Non appendere se null, Zod .nullable().optional() lo gestirà come undefined se non presente
-            } else if (value !== undefined) {
-                 formData.append(key, String(value));
-            }
-          });
-          formAction(formData);
-        })} className="space-y-8">
+        <form
+          action={formAction} // Pass formAction directly here
+          // onSubmit will be handled by RHF for client-side validation.
+          // If RHF validation passes, the form's native submission mechanism
+          // will trigger the Server Action passed to the `action` prop.
+          // RHF's handleSubmit is not explicitly called here to trigger the action.
+          onSubmit={handleSubmit(() => {
+            // This function can be empty or used for other client-side logic
+            // *before* the form is submitted to the server action, but it should
+            // not call formAction(formData) itself.
+            // If RHF validation fails, this inner part is not even reached.
+          })}
+          className="space-y-8"
+        >
 
           {state.message && !state.success && (
             <Alert variant="destructive">
@@ -224,17 +221,16 @@ export default function RequestForm() {
               <Input id="desiredModel" {...register("desiredModel")} placeholder="Es. Submariner, Speedmaster" className="mt-1 bg-input border-border focus:border-accent focus:ring-accent" />
             </div>
           </div>
-          
+
           <div>
             <Label className="text-foreground/80">Fascia di Prezzo (Opzionale)</Label>
             <div className="mt-2 space-y-3">
               <Controller
-                name="budgetMin" 
+                name="budgetMin"
                 control={control}
-                // Rimosso il render custom per Select qui, i valori sono gestiti da budgetRange e input nascosti
-                render={({ field }) => ( // field.value qui sarà budgetRange[0]
-                  <Select 
-                    onValueChange={handlePresetChange} 
+                render={({ field }) => (
+                  <Select
+                    onValueChange={handlePresetChange}
                     value={budgetPresets.find(p => p.min === field.value && p.max === watch("budgetMax")) ? `${field.value}-${watch("budgetMax")}` : ""}
                   >
                     <SelectTrigger className="w-full md:w-1/2 bg-input border-border focus:border-accent focus:ring-accent">
@@ -253,7 +249,7 @@ export default function RequestForm() {
                 value={budgetRange}
                 onValueChange={handleBudgetChange}
                 min={0}
-                max={200000} 
+                max={200000}
                 step={500}
                 className="[&>span>span]:bg-accent [&>span]:bg-primary/30"
               />
@@ -267,7 +263,7 @@ export default function RequestForm() {
               {errors.budgetMin && !errors.budgetMax && <p className="text-sm text-destructive mt-1">{errors.budgetMin.message}</p>}
             </div>
           </div>
-          
+
           <div>
             <Label htmlFor="aiCriteria" className="text-foreground/80">Descrivi la tua richiesta (per suggerimenti AI)</Label>
             <Textarea
@@ -294,7 +290,7 @@ export default function RequestForm() {
             />
             {errors.additionalNotes && <p className="text-sm text-destructive mt-1">{errors.additionalNotes.message}</p>}
           </div>
-          
+
           <p className="text-xs text-muted-foreground">
             Cliccando "Invia Richiesta", accetti i nostri Termini di Servizio e la Politica sulla Privacy. Un nostro concierge ti contatterà entro 24 ore. Il servizio di ricerca ha un costo che ti verrà comunicato.
           </p>
@@ -305,4 +301,3 @@ export default function RequestForm() {
     </Card>
   );
 }
-
