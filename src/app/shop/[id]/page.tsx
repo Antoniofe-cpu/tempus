@@ -204,7 +204,7 @@ export default async function WatchDetailPage({ params }: Props) {
                 <Button asChild size="lg" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground group">
                   <Link href={`/richiesta-personalizzata?watchName=${encodeURIComponent(watch.name)}&watchBrand=${encodeURIComponent(watch.brand)}&watchRef=${encodeURIComponent(watch.referenceNumber || '')}`}>
                     {/* Changed button text to "Trattativa in Privato" */}
-                    <MessageSquareQuote className=\"mr-2 h-5 w-5\" /> Trattativa in Privato
+                    <MessageSquareQuote className="mr-2 h-5 w-5" /> Trattativa in Privato
                   </Link>
                 </Button>
                 <p className="text-xs text-muted-foreground mt-3 text-center">
@@ -219,5 +219,3 @@ export default async function WatchDetailPage({ params }: Props) {
     </div>
   );
 }
-
-    
