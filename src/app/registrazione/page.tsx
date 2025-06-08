@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { createUserWithEmailAndPassword, updateProfile, type AuthError } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
@@ -25,13 +25,14 @@ const RegistrationFormSchema = z.object({
   confirmPassword: z.string().min(6, { message: "Conferma la password." }),
 }).refine(data => data.password === data.confirmPassword, {
   message: "Le password non coincidono.",
-  path: ["confirmPassword"], // Indica a quale campo associare l'errore
+  path: ["confirmPassword"], 
 });
 
 type RegistrationFormData = z.infer<typeof RegistrationFormSchema>;
 
 export default function RegistrazionePage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
 
@@ -55,7 +56,16 @@ export default function RegistrazionePage() {
         variant: "default",
       });
       reset();
-      router.push('/registrazione/successo'); // Redirect to a success page
+      
+      const redirectUrl = searchParams.get('redirect');
+      const fromForm = searchParams.get('fromForm') === 'true';
+      const origin = searchParams.get('origin');
+
+      if (redirectUrl && fromForm && origin === 'requestForm') {
+        router.push(`${redirectUrl}?fromForm=true&origin=requestForm`); // Mantiene i parametri per il ripristino
+      } else {
+        router.push('/registrazione/successo');
+      }
 
     } catch (error) {
       const authError = error as AuthError;
@@ -152,7 +162,10 @@ export default function RegistrazionePage() {
           <CardFooter className="flex flex-col items-center text-sm">
              <p className="text-muted-foreground">
               Hai già un account?{' '}
-              <Link href="/login" className="font-medium text-accent hover:underline">
+              <Link 
+                href={`/login${searchParams.get('redirect') ? `?redirect=${searchParams.get('redirect')}&fromForm=${searchParams.get('fromForm') === 'true'}&origin=${searchParams.get('origin')}` : ''}`} 
+                className="font-medium text-accent hover:underline"
+              >
                 Accedi
               </Link>
             </p>
@@ -163,3 +176,5 @@ export default function RegistrazionePage() {
     </div>
   );
 }
+
+    

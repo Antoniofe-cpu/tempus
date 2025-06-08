@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useActionState } from 'react';
+import { useActionState, useEffect, useState, useCallback } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -12,13 +12,16 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from "@/components/ui/slider";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { submitPersonalizedRequest, FormState } from '@/lib/actions';
+import { submitPersonalizedRequest, type FormState } from '@/lib/actions';
 import AiSuggestions from './AiSuggestions';
 import type { WatchType } from '@/lib/types';
-import React, { useEffect, useState, useCallback } from 'react';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { CheckCircle, AlertCircleIcon, Sparkles, SendIcon, Loader2 } from "lucide-react";
+import { CheckCircle, AlertCircleIcon, Sparkles, SendIcon, Loader2, User } from "lucide-react";
 import { useFormStatus } from 'react-dom';
+import { auth } from '@/lib/firebase';
+import { onAuthStateChanged } from 'firebase/auth';
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
+import { useToast } from '@/hooks/use-toast';
 
 const PersonalizedRequestSchema = z.object({
   name: z.string().min(2, { message: "Il nome deve contenere almeno 2 caratteri." }),
@@ -51,6 +54,8 @@ const budgetPresets = [
   { label: "€50,000+", min: 50000, max: 200000 }, // Max is for slider practical limit
 ];
 
+const LOCAL_STORAGE_KEY_DATA = 'pendingRequestData';
+const LOCAL_STORAGE_KEY_REDIRECT = 'pendingRequestRedirectPath';
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -73,7 +78,15 @@ function SubmitButton() {
 
 export default function RequestForm() {
   const initialState: FormState = { message: '', success: false, issues: [] };
-  const [state, formAction] = useActionState(submitPersonalizedRequest, initialState);
+  const [actionState, formAction] = useActionState(submitPersonalizedRequest, initialState);
+  const { toast } = useToast();
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
 
   const { register, control, handleSubmit, formState: { errors }, watch, setValue, reset } = useForm<PersonalizedRequestFormData>({
     resolver: zodResolver(PersonalizedRequestSchema),
@@ -93,15 +106,114 @@ export default function RequestForm() {
   const [budgetRange, setBudgetRange] = useState<[number, number]>([budgetPresets[0].min, budgetPresets[0].max]);
 
   useEffect(() => {
-    if (state.success) {
-      reset();
-      setBudgetRange([budgetPresets[0].min, budgetPresets[0].max]);
-    } else if (state.fields) {
-       Object.entries(state.fields).forEach(([key, value]) => {
-        setValue(key as keyof PersonalizedRequestFormData, value);
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setCurrentUser(user);
+      setAuthLoading(false);
+    });
+    return () => unsubscribe();
+  }, []);
+
+
+  useEffect(() => {
+    if (actionState.success) {
+      reset(); // Resetta il form RHF
+      setBudgetRange([budgetPresets[0].min, budgetPresets[0].max]); // Resetta lo slider del budget
+      // Non resettare lo stato di actionState qui, altrimenti il messaggio di successo scompare
+      toast({
+        title: "Richiesta Inviata!",
+        description: actionState.message,
+        variant: "default",
       });
+    } else if (actionState.message && !actionState.success && (actionState.issues || actionState.fields)) {
+        toast({
+            title: "Errore Invio Richiesta",
+            description: actionState.message || "Controlla i campi del form.",
+            variant: "destructive",
+        });
+        if (actionState.fields) {
+            // Ripristina i campi del form se l'action server ha fallito ma ha restituito i campi
+            Object.entries(actionState.fields).forEach(([key, value]) => {
+                setValue(key as keyof PersonalizedRequestFormData, value as any, { shouldValidate: true });
+            });
+        }
     }
-  }, [state, reset, setValue]);
+  }, [actionState, reset, setValue, toast]);
+
+
+  useEffect(() => {
+    if (authLoading) return; // Aspetta che l'autenticazione sia caricata
+
+    const pendingDataString = localStorage.getItem(LOCAL_STORAGE_KEY_DATA);
+    const pendingRedirectPath = localStorage.getItem(LOCAL_STORAGE_KEY_REDIRECT);
+    
+    const wasRedirectedFromAuth = searchParams.get('fromForm') === 'true' && searchParams.get('origin') === 'requestForm';
+
+    if (currentUser) { // Utente è loggato
+      if (pendingDataString && pendingRedirectPath === pathname && wasRedirectedFromAuth) {
+        try {
+          const pendingData = JSON.parse(pendingDataString) as PersonalizedRequestFormData;
+          Object.keys(pendingData).forEach(key => {
+            setValue(key as keyof PersonalizedRequestFormData, pendingData[key as keyof PersonalizedRequestFormData], { shouldValidate: true });
+          });
+          // Precompila nome ed email dal profilo sovrascrivendo quelli salvati, se disponibili
+          if (currentUser.displayName) setValue('name', currentUser.displayName, { shouldValidate: true });
+          if (currentUser.email) setValue('email', currentUser.email, { shouldValidate: true });
+
+          if (pendingData.budgetMin !== undefined && pendingData.budgetMax !== undefined) {
+            setBudgetRange([pendingData.budgetMin ?? 0, pendingData.budgetMax ?? 0]);
+          }
+
+          localStorage.removeItem(LOCAL_STORAGE_KEY_DATA);
+          localStorage.removeItem(LOCAL_STORAGE_KEY_REDIRECT);
+          // Rimuovi i query params specifici per evitare ripopolamento multiplo
+          const newSearchParams = new URLSearchParams(searchParams.toString());
+          newSearchParams.delete('fromForm');
+          newSearchParams.delete('origin');
+          router.replace(`${pathname}?${newSearchParams.toString()}`, { scroll: false });
+
+
+          toast({ title: "Dati Ripristinati", description: "I dati della tua richiesta precedente sono stati ripristinati. Puoi inviarla ora." });
+        } catch (e) {
+          console.error("Errore nel parsare pendingRequestData:", e);
+          localStorage.removeItem(LOCAL_STORAGE_KEY_DATA);
+          localStorage.removeItem(LOCAL_STORAGE_KEY_REDIRECT);
+        }
+      } else {
+        // Utente loggato, nessun dato pendente, precompila nome ed email
+        if (currentUser.displayName && !watch('name')) setValue('name', currentUser.displayName);
+        if (currentUser.email && !watch('email')) setValue('email', currentUser.email);
+      }
+    }
+    // Se l'utente non è loggato, non fare nulla qui. La gestione avviene al submit.
+  }, [currentUser, authLoading, setValue, pathname, router, toast, searchParams, watch]);
+
+
+  const handleActualSubmit = async (data: PersonalizedRequestFormData) => {
+    if (!currentUser && !authLoading) {
+      localStorage.setItem(LOCAL_STORAGE_KEY_DATA, JSON.stringify(data));
+      localStorage.setItem(LOCAL_STORAGE_KEY_REDIRECT, pathname);
+      toast({
+        title: "Login Richiesto",
+        description: "Per inviare la richiesta devi effettuare il login o registrarti. I tuoi dati sono stati salvati temporaneamente.",
+        duration: 7000,
+      });
+      router.push(`/login?redirect=${pathname}&fromForm=true&origin=requestForm`);
+      return;
+    }
+
+    // Utente loggato, procedi con l'invio
+    const formDataForAction = new FormData();
+    Object.entries(data).forEach(([key, value]) => {
+      if (value !== null && value !== undefined) {
+         if (typeof value === 'number' || typeof value === 'string' || typeof value === 'boolean') {
+          formDataForAction.append(key, String(value));
+        }
+      }
+    });
+    // Chiamata esplicita all'action
+    // @ts-ignore prevState non è direttamente accessibile qui, ma useActionState lo gestisce
+    formAction(formDataForAction);
+  };
 
   const handleBudgetChange = (value: [number, number]) => {
     setBudgetRange(value);
@@ -131,6 +243,14 @@ export default function RequestForm() {
     }
   }, [watch]);
 
+  if (authLoading) {
+    return (
+        <div className="flex flex-col items-center justify-center h-96">
+            <Loader2 className="h-12 w-12 text-accent animate-spin" />
+            <p className="mt-4 text-muted-foreground">Caricamento informazioni utente...</p>
+        </div>
+    );
+  }
 
   return (
     <Card className="w-full max-w-3xl mx-auto shadow-2xl bg-card border border-border/60">
@@ -142,49 +262,44 @@ export default function RequestForm() {
       </CardHeader>
       <CardContent>
         <form
-          action={formAction} // Pass formAction directly here
-          // onSubmit will be handled by RHF for client-side validation.
-          // If RHF validation passes, the form's native submission mechanism
-          // will trigger the Server Action passed to the `action` prop.
-          // RHF's handleSubmit is not explicitly called here to trigger the action.
-          onSubmit={handleSubmit(() => {
-            // This function can be empty or used for other client-side logic
-            // *before* the form is submitted to the server action, but it should
-            // not call formAction(formData) itself.
-            // If RHF validation fails, this inner part is not even reached.
-          })}
+          onSubmit={handleSubmit(handleActualSubmit)} // Chiamata alla funzione di gestione submit
           className="space-y-8"
         >
-
-          {state.message && !state.success && (
+          {actionState.message && !actionState.success && (
             <Alert variant="destructive">
               <AlertCircleIcon className="h-4 w-4" />
               <AlertTitle>Errore</AlertTitle>
-              <AlertDescription>{state.message}</AlertDescription>
-              {state.issues && state.issues.length > 0 && (
+              <AlertDescription>{actionState.message}</AlertDescription>
+              {actionState.issues && actionState.issues.length > 0 && (
                 <ul className="list-disc list-inside mt-2 text-sm">
-                  {state.issues.map((issue, i) => <li key={i}>{issue}</li>)}
+                  {actionState.issues.map((issue, i) => <li key={i}>{issue}</li>)}
                 </ul>
               )}
             </Alert>
           )}
-          {state.message && state.success && (
+          {actionState.message && actionState.success && (
              <Alert variant="default" className="bg-green-500/10 border-green-500 text-green-700 dark:text-green-400">
               <CheckCircle className="h-4 w-4 text-green-500" />
               <AlertTitle className="text-green-600 dark:text-green-500">Successo!</AlertTitle>
-              <AlertDescription>{state.message}</AlertDescription>
+              <AlertDescription>{actionState.message}</AlertDescription>
             </Alert>
           )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <Label htmlFor="name" className="text-foreground/80">Nome Completo</Label>
-              <Input id="name" {...register("name")} placeholder="Mario Rossi" className="mt-1 bg-input border-border focus:border-accent focus:ring-accent" />
+              <Input id="name" {...register("name")} placeholder="Mario Rossi" className="mt-1 bg-input border-border focus:border-accent focus:ring-accent" 
+                     readOnly={!!(currentUser && currentUser.displayName)} 
+                     aria-disabled={!!(currentUser && currentUser.displayName)}
+              />
               {errors.name && <p className="text-sm text-destructive mt-1">{errors.name.message}</p>}
             </div>
             <div>
               <Label htmlFor="email" className="text-foreground/80">Indirizzo Email</Label>
-              <Input id="email" type="email" {...register("email")} placeholder="mario.rossi@esempio.com" className="mt-1 bg-input border-border focus:border-accent focus:ring-accent" />
+              <Input id="email" type="email" {...register("email")} placeholder="mario.rossi@esempio.com" className="mt-1 bg-input border-border focus:border-accent focus:ring-accent" 
+                     readOnly={!!(currentUser && currentUser.email)}
+                     aria-disabled={!!(currentUser && currentUser.email)}
+              />
               {errors.email && <p className="text-sm text-destructive mt-1">{errors.email.message}</p>}
             </div>
           </div>
@@ -226,12 +341,15 @@ export default function RequestForm() {
             <Label className="text-foreground/80">Fascia di Prezzo (Opzionale)</Label>
             <div className="mt-2 space-y-3">
               <Controller
-                name="budgetMin"
+                name="budgetMin" 
                 control={control}
-                render={({ field }) => (
+                render={({ field }) => ( // field.value qui è budgetMin
                   <Select
                     onValueChange={handlePresetChange}
-                    value={budgetPresets.find(p => p.min === field.value && p.max === watch("budgetMax")) ? `${field.value}-${watch("budgetMax")}` : ""}
+                    // Determina il valore selezionato per il preset
+                    value={budgetPresets.find(p => p.min === budgetRange[0] && p.max === budgetRange[1]) 
+                           ? `${budgetRange[0]}-${budgetRange[1]}` 
+                           : "custom"}
                   >
                     <SelectTrigger className="w-full md:w-1/2 bg-input border-border focus:border-accent focus:ring-accent">
                       <SelectValue placeholder="Seleziona fascia di prezzo predefinita" />
@@ -301,3 +419,5 @@ export default function RequestForm() {
     </Card>
   );
 }
+
+    

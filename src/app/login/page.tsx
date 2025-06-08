@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useRouter, useSearchParams } from 'next/navigation'; // Aggiunto useSearchParams
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { signInWithEmailAndPassword, type AuthError } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
@@ -27,7 +27,7 @@ type LoginFormData = z.infer<typeof LoginFormSchema>;
 
 export default function LoginPage() {
   const router = useRouter();
-  const searchParams = useSearchParams(); // Per ottenere il parametro redirect
+  const searchParams = useSearchParams();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
 
@@ -48,10 +48,15 @@ export default function LoginPage() {
       reset();
       
       const redirectUrl = searchParams.get('redirect');
-      if (redirectUrl) {
-        router.push(redirectUrl); // Reindirizza all'URL specificato o alla dashboard
+      const fromForm = searchParams.get('fromForm') === 'true';
+      const origin = searchParams.get('origin');
+
+      if (redirectUrl && fromForm && origin === 'requestForm') {
+        router.push(`${redirectUrl}?fromForm=true&origin=requestForm`); // Mantiene i parametri per il ripristino
+      } else if (redirectUrl) {
+        router.push(redirectUrl);
       } else {
-        router.push('/'); // Reindirizza alla homepage se non c'è redirect
+        router.push('/'); 
       }
 
     } catch (error) {
@@ -132,7 +137,10 @@ export default function LoginPage() {
           <CardFooter className="flex flex-col items-center text-sm">
              <p className="text-muted-foreground">
               Non hai un account?{' '}
-              <Link href="/registrazione" className="font-medium text-accent hover:underline">
+              <Link 
+                href={`/registrazione${searchParams.get('redirect') ? `?redirect=${searchParams.get('redirect')}&fromForm=${searchParams.get('fromForm') === 'true'}&origin=${searchParams.get('origin')}` : ''}`} 
+                className="font-medium text-accent hover:underline"
+              >
                 Registrati
               </Link>
             </p>
@@ -143,3 +151,5 @@ export default function LoginPage() {
     </div>
   );
 }
+
+    
