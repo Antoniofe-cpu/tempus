@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useActionState, useEffect, useState, useCallback } from 'react';
+import { useActionState, useEffect, useState, Suspense as ReactSuspense } from 'react'; // Added ReactSuspense for clarity if needed elsewhere, but not for this direct fix
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -75,45 +75,17 @@ function SubmitButton() {
   );
 }
 
-interface SearchParamsHandlerProps {
-  setValue: (name: any, value: any, options?: any) => void;
-  watch: (name: any) => any;
-  router: ReturnType<typeof useRouter>;
-  pathname: string;
-}
-
-function SearchParamsHandler({ setValue, watch, router, pathname }: SearchParamsHandlerProps) {
-  const searchParams = useSearchParams();
-
-  useEffect(() => {
-    const watchNameQuery = searchParams.get('watchName');
-    const watchBrandQuery = searchParams.get('watchBrand');
-    const watchRefQuery = searchParams.get('watchRef');
-
-    if (watchNameQuery || watchBrandQuery || watchRefQuery) {
-      let initialCriteria = "Sono interessato a discutere o avviare una trattativa per l'orologio";
-      if (watchBrandQuery) initialCriteria += ` ${watchBrandQuery}`;
-      if (watchNameQuery) initialCriteria += ` ${watchNameQuery}`;
-      if (watchRefQuery && watchRefQuery !== 'undefined' && watchRefQuery !== 'null') initialCriteria += ` (Ref: ${watchRefQuery})`;
-      initialCriteria += ". Potete fornirmi maggiori dettagli o avviare una consulenza?";
-      
-      if (!watch('aiCriteria')) setValue('aiCriteria', initialCriteria);
-      if (watchBrandQuery && !watch('desiredBrand')) setValue('desiredBrand', watchBrandQuery);
-      if (watchNameQuery && !watch('desiredModel')) setValue('desiredModel', watchNameQuery);
-      if (watchRefQuery && !watch('watchRef')) setValue('watchRef', watchRefQuery);
-    }
-  }, [searchParams, setValue, watch]);
-
-  return null; // This component doesn't render anything
-}
-
 export default function RequestForm() {
   const initialState: FormState = { message: '', success: false, issues: [] };
   const [actionState, formAction] = useActionState(submitPersonalizedRequest, initialState);
-  const searchParams = useSearchParams();
+  
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParamsHook = useSearchParams(); // Call useSearchParams directly in RequestForm
 
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const { toast } = useToast();
 
   const { register, control, handleSubmit, formState: { errors }, watch, setValue, reset } = useForm<PersonalizedRequestFormData>({
     resolver: zodResolver(PersonalizedRequestSchema),
@@ -133,6 +105,27 @@ export default function RequestForm() {
 
   const [budgetRange, setBudgetRange] = useState<[number, number]>([budgetPresets[0].min, budgetPresets[0].max]);
 
+  // Effect to handle query params from URL
+  useEffect(() => {
+    const watchNameQuery = searchParamsHook.get('watchName');
+    const watchBrandQuery = searchParamsHook.get('watchBrand');
+    const watchRefQuery = searchParamsHook.get('watchRef');
+
+    if (watchNameQuery || watchBrandQuery || watchRefQuery) {
+      let initialCriteria = "Sono interessato a discutere o avviare una trattativa per l'orologio";
+      if (watchBrandQuery) initialCriteria += ` ${watchBrandQuery}`;
+      if (watchNameQuery) initialCriteria += ` ${watchNameQuery}`;
+      if (watchRefQuery && watchRefQuery !== 'undefined' && watchRefQuery !== 'null') initialCriteria += ` (Ref: ${watchRefQuery})`;
+      initialCriteria += ". Potete fornirmi maggiori dettagli o avviare una consulenza?";
+      
+      if (!watch('aiCriteria')) setValue('aiCriteria', initialCriteria);
+      if (watchBrandQuery && !watch('desiredBrand')) setValue('desiredBrand', watchBrandQuery);
+      if (watchNameQuery && !watch('desiredModel')) setValue('desiredModel', watchNameQuery);
+      if (watchRefQuery && !watch('watchRef')) setValue('watchRef', watchRefQuery);
+    }
+  }, [searchParamsHook, setValue, watch]);
+
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
@@ -150,7 +143,7 @@ export default function RequestForm() {
         description: actionState.message,
         variant: "default",
       });
-      if (searchParams.get('watchName') || searchParams.get('watchBrand') || searchParams.get('watchRef')) {
+      if (searchParamsHook.get('watchName') || searchParamsHook.get('watchBrand') || searchParamsHook.get('watchRef')) {
         router.replace(pathname, { scroll: false });
       }
     } else if (actionState.message && !actionState.success && (actionState.issues || actionState.fields)) {
@@ -165,7 +158,7 @@ export default function RequestForm() {
             });
         }
     }
-  }, [actionState, reset, setValue, toast, router, pathname]);
+  }, [actionState, reset, setValue, toast, router, pathname, searchParamsHook]);
 
 
   useEffect(() => {
@@ -174,7 +167,7 @@ export default function RequestForm() {
     const pendingDataString = localStorage.getItem(LOCAL_STORAGE_KEY_DATA);
     const pendingRedirectPath = localStorage.getItem(LOCAL_STORAGE_KEY_REDIRECT);
     
-    const wasRedirectedFromAuth = searchParams.get('fromForm') === 'true' && searchParams.get('origin') === 'requestForm';
+    const wasRedirectedFromAuth = searchParamsHook.get('fromForm') === 'true' && searchParamsHook.get('origin') === 'requestForm';
 
     if (currentUser) { 
       if (pendingDataString && pendingRedirectPath === pathname && wasRedirectedFromAuth) {
@@ -192,7 +185,7 @@ export default function RequestForm() {
 
           localStorage.removeItem(LOCAL_STORAGE_KEY_DATA);
           localStorage.removeItem(LOCAL_STORAGE_KEY_REDIRECT);
-          const newSearchParams = new URLSearchParams(searchParams.toString());
+          const newSearchParams = new URLSearchParams(searchParamsHook.toString());
           newSearchParams.delete('fromForm');
           newSearchParams.delete('origin');
           router.replace(`${pathname}?${newSearchParams.toString()}`, { scroll: false });
@@ -208,7 +201,7 @@ export default function RequestForm() {
         if (currentUser.email && !watch('email')) setValue('email', currentUser.email);
       }
     }
-  }, [currentUser, authLoading, setValue, pathname, router, toast, searchParams, watch]);
+  }, [currentUser, authLoading, setValue, pathname, router, toast, searchParamsHook, watch]);
 
 
   const handleActualSubmit = async (data: PersonalizedRequestFormData) => {
@@ -220,7 +213,7 @@ export default function RequestForm() {
         description: "Per inviare la richiesta devi effettuare il login o registrarti. I tuoi dati sono stati salvati temporaneamente.",
         duration: 7000,
       });
-      const currentQuery = new URLSearchParams(searchParams.toString()).toString();
+      const currentQuery = new URLSearchParams(searchParamsHook.toString()).toString();
       router.push(`/login?redirect=${pathname}${currentQuery ? `&${currentQuery}` : ''}&fromForm=true&origin=requestForm`);
       return;
     }
@@ -258,10 +251,6 @@ export default function RequestForm() {
     );
   }
   
-  function InnerSuspenseFallback() {
-      // You can add a minimal loading indicator if needed, but it might not be visible
-      return null; 
-  }
 
   return (
     <Card className="w-full max-w-3xl mx-auto shadow-2xl bg-card border border-border/60">
@@ -277,9 +266,6 @@ export default function RequestForm() {
           onSubmit={handleSubmit(handleActualSubmit)}
           className="space-y-8"
         >
-          <Suspense fallback={<InnerSuspenseFallback />}>
-            <SearchParamsHandler setValue={setValue} watch={watch} router={router} pathname={pathname} />
-          </Suspense>
           {actionState.message && !actionState.success && (
             <Alert variant="destructive">
               <AlertCircleIcon className="h-4 w-4" />
@@ -352,7 +338,6 @@ export default function RequestForm() {
             </div>
           </div>
           
-          {/* Campo nascosto per la referenza */}
           <input type="hidden" {...register("watchRef")} />
 
 
@@ -432,5 +417,4 @@ export default function RequestForm() {
     </Card>
   );
 }
-
     
