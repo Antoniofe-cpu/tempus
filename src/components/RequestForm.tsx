@@ -7,7 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+import { Textarea } from '@/components/ui/textarea'; 
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from "@/components/ui/slider";
@@ -20,7 +20,7 @@ import { useFormStatus } from 'react-dom';
 import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, type User } from 'firebase/auth'; 
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/hooks/use-toast'; 
 
 const PersonalizedRequestSchema = z.object({
   name: z.string().min(2, { message: "Il nome deve contenere almeno 2 caratteri." }),
@@ -75,13 +75,41 @@ function SubmitButton() {
   );
 }
 
+interface SearchParamsHandlerProps {
+  setValue: (name: any, value: any, options?: any) => void;
+  watch: (name: any) => any;
+  router: ReturnType<typeof useRouter>;
+  pathname: string;
+}
+
+function SearchParamsHandler({ setValue, watch, router, pathname }: SearchParamsHandlerProps) {
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const watchNameQuery = searchParams.get('watchName');
+    const watchBrandQuery = searchParams.get('watchBrand');
+    const watchRefQuery = searchParams.get('watchRef');
+
+    if (watchNameQuery || watchBrandQuery || watchRefQuery) {
+      let initialCriteria = "Sono interessato a discutere o avviare una trattativa per l'orologio";
+      if (watchBrandQuery) initialCriteria += ` ${watchBrandQuery}`;
+      if (watchNameQuery) initialCriteria += ` ${watchNameQuery}`;
+      if (watchRefQuery && watchRefQuery !== 'undefined' && watchRefQuery !== 'null') initialCriteria += ` (Ref: ${watchRefQuery})`;
+      initialCriteria += ". Potete fornirmi maggiori dettagli o avviare una consulenza?";
+      
+      if (!watch('aiCriteria')) setValue('aiCriteria', initialCriteria);
+      if (watchBrandQuery && !watch('desiredBrand')) setValue('desiredBrand', watchBrandQuery);
+      if (watchNameQuery && !watch('desiredModel')) setValue('desiredModel', watchNameQuery);
+      if (watchRefQuery && !watch('watchRef')) setValue('watchRef', watchRefQuery);
+    }
+  }, [searchParams, setValue, watch]);
+
+  return null; // This component doesn't render anything
+}
 
 export default function RequestForm() {
   const initialState: FormState = { message: '', success: false, issues: [] };
   const [actionState, formAction] = useActionState(submitPersonalizedRequest, initialState);
-  const { toast } = useToast();
-  const router = useRouter();
-  const pathname = usePathname();
   const searchParams = useSearchParams();
 
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -114,34 +142,6 @@ export default function RequestForm() {
   }, []);
 
   useEffect(() => {
-    const watchNameQuery = searchParams.get('watchName');
-    const watchBrandQuery = searchParams.get('watchBrand');
-    const watchRefQuery = searchParams.get('watchRef');
-
-    if (watchNameQuery || watchBrandQuery || watchRefQuery) {
-      let initialCriteria = "Sono interessato a discutere o avviare una trattativa per l'orologio";
-      if (watchBrandQuery) initialCriteria += ` ${watchBrandQuery}`;
-      if (watchNameQuery) initialCriteria += ` ${watchNameQuery}`;
-      if (watchRefQuery && watchRefQuery !== 'undefined' && watchRefQuery !== 'null') initialCriteria += ` (Ref: ${watchRefQuery})`;
-      initialCriteria += ". Potete fornirmi maggiori dettagli o avviare una consulenza?";
-      
-      if (!watch('aiCriteria')) {
-        setValue('aiCriteria', initialCriteria);
-      }
-      if (watchBrandQuery && !watch('desiredBrand')) {
-        setValue('desiredBrand', watchBrandQuery);
-      }
-      if (watchNameQuery && !watch('desiredModel')) {
-        setValue('desiredModel', watchNameQuery);
-      }
-      if (watchRefQuery && !watch('watchRef')) {
-        setValue('watchRef', watchRefQuery);
-      }
-    }
-  }, [searchParams, setValue, watch]);
-
-
-  useEffect(() => {
     if (actionState.success) {
       reset(); 
       setBudgetRange([budgetPresets[0].min, budgetPresets[0].max]); 
@@ -165,7 +165,7 @@ export default function RequestForm() {
             });
         }
     }
-  }, [actionState, reset, setValue, toast, router, pathname, searchParams]);
+  }, [actionState, reset, setValue, toast, router, pathname]);
 
 
   useEffect(() => {
@@ -202,7 +202,7 @@ export default function RequestForm() {
           console.error("Errore nel parsare pendingRequestData:", e);
           localStorage.removeItem(LOCAL_STORAGE_KEY_DATA);
           localStorage.removeItem(LOCAL_STORAGE_KEY_REDIRECT);
-        }
+        } 
       } else {
         if (currentUser.displayName && !watch('name')) setValue('name', currentUser.displayName);
         if (currentUser.email && !watch('email')) setValue('email', currentUser.email);
@@ -257,6 +257,11 @@ export default function RequestForm() {
         </div>
     );
   }
+  
+  function InnerSuspenseFallback() {
+      // You can add a minimal loading indicator if needed, but it might not be visible
+      return null; 
+  }
 
   return (
     <Card className="w-full max-w-3xl mx-auto shadow-2xl bg-card border border-border/60">
@@ -272,6 +277,9 @@ export default function RequestForm() {
           onSubmit={handleSubmit(handleActualSubmit)}
           className="space-y-8"
         >
+          <Suspense fallback={<InnerSuspenseFallback />}>
+            <SearchParamsHandler setValue={setValue} watch={watch} router={router} pathname={pathname} />
+          </Suspense>
           {actionState.message && !actionState.success && (
             <Alert variant="destructive">
               <AlertCircleIcon className="h-4 w-4" />

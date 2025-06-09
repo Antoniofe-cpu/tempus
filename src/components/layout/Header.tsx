@@ -1,16 +1,38 @@
 
+'use client';
+
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Menu, WatchIcon, Search, Briefcase } from 'lucide-react'; 
-import React from 'react';
-import AuthNavLinks from './AuthNavLinks'; // Importa il nuovo componente
+import React, { Suspense } from 'react'; // Import Suspense
+import AuthNavLinks from './AuthNavLinks'; 
 
 const mainNavItems = [
   { href: '/', label: 'Home', icon: <WatchIcon className="h-5 w-5 text-accent" /> },
   { href: '/shop', label: 'Shop', icon: <Search className="h-5 w-5 text-accent" /> },
   { href: '/richiesta-personalizzata', label: 'Richiesta', icon: <Briefcase className="h-5 w-5 text-accent" /> },
 ];
+
+// Fallback component for AuthNavLinks during suspense
+function AuthNavLinksDesktopFallback() {
+  return (
+    <>
+      <div className="animate-pulse bg-muted/50 h-6 w-16 rounded-md"></div>
+      <div className="animate-pulse bg-muted/50 h-8 w-20 rounded-md ml-2"></div>
+    </>
+  );
+}
+
+function AuthNavLinksMobileFallback() {
+  return (
+    <>
+      <div className="animate-pulse bg-muted/50 h-10 w-full rounded-md"></div>
+      <div className="animate-pulse bg-muted/50 h-10 w-full rounded-md mt-4"></div>
+    </>
+  );
+}
+
 
 export default function Header() {
   return (
@@ -31,7 +53,9 @@ export default function Header() {
               {item.label}
             </Link>
           ))}
-          <AuthNavLinks /> {/* Link di autenticazione per desktop */}
+          <Suspense fallback={<AuthNavLinksDesktopFallback />}>
+            <AuthNavLinks /> {/* Link di autenticazione per desktop */}
+          </Suspense>
         </nav>
 
         <div className="md:hidden">
@@ -59,7 +83,9 @@ export default function Header() {
                       <span>{item.label}</span>
                     </Link>
                   ))}
-                  <AuthNavLinks isMobile={true} /> {/* Link di autenticazione per mobile */}
+                  <Suspense fallback={<AuthNavLinksMobileFallback />}>
+                    <AuthNavLinks isMobile={true} /> {/* Link di autenticazione per mobile */}
+                  </Suspense>
                 </nav>
               </div>
             </SheetContent>
@@ -69,3 +95,4 @@ export default function Header() {
     </header>
   );
 }
+
