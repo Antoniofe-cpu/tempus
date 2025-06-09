@@ -262,7 +262,7 @@ export default function AdminImpostazioniPage() {
                   {errors[field.key] && <p className="text-sm text-destructive mt-1">{errors[field.key]?.message}</p>}
                   
                   {field.currentUrlState && (
-                      <div className="mt-3 p-3 border rounded-md bg-muted/30">
+                      <div className="mt-3 p-3 border rounded-md bg-muted/30 max-w-md">
                           <p className="text-xs text-muted-foreground mb-2">Anteprima Icona Attuale:</p>
                           <Image
                               src={field.currentUrlState}
@@ -278,7 +278,7 @@ export default function AdminImpostazioniPage() {
                       </div>
                   )}
                   {!field.currentUrlState && !field.fileState && (
-                      <div className="mt-3 p-3 border border-dashed rounded-md bg-muted/30 text-center">
+                      <div className="mt-3 p-3 border border-dashed rounded-md bg-muted/30 text-center max-w-md">
                           <AlertCircle className="h-6 w-6 text-muted-foreground mx-auto mb-1"/>
                           <p className="text-xs text-muted-foreground">Nessuna icona per "{field.label}" attualmente impostata o selezionata.</p>
                       </div>
@@ -303,4 +303,3 @@ export default function AdminImpostazioniPage() {
   );
 }
     
-
