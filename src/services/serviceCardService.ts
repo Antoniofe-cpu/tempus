@@ -76,13 +76,14 @@ export async function populateServiceCardsIfNeeded(): Promise<void> {
     }
   } catch (error) {
     console.error("Error populating service cards in Firestore:", error);
+    // Non rilanciare l'errore qui, è una funzione di setup
   }
 }
 
 export async function getServiceCards(): Promise<ServiceCard[]> {
   // console.log('Service (Firestore): getServiceCards called');
-  await populateServiceCardsIfNeeded(); 
   try {
+    await populateServiceCardsIfNeeded(); 
     const serviceCardsCollection = collection(db, COLLECTION_NAME).withConverter(serviceCardConverter);
     const querySnapshot = await getDocs(serviceCardsCollection);
     const serviceCards = querySnapshot.docs.map(docSnapshot => docSnapshot.data());
@@ -90,7 +91,8 @@ export async function getServiceCards(): Promise<ServiceCard[]> {
     return serviceCards;
   } catch (error) {
     console.error("Error in getServiceCards (Firestore): ", error);
-    throw error;
+    // throw error; // Rimosso il re-throw
+    return []; // Restituisce un array vuoto in caso di errore
   }
 }
 
@@ -127,3 +129,4 @@ export async function updateServiceCard(id: string, serviceCardUpdate: Partial<O
     throw error;
   }
 }
+
